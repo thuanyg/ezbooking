@@ -9,7 +9,7 @@ class Routes {
     SplashPage.routName: (context) => const SplashPage(),
     HomePage.routeName: (context) => HomePage(),
     OnboardingPage.routeName: (context) => OnboardingPage(),
-    LoginPage.routeName: (context) => const LoginPage(),
+    LoginPage.routeName: (context) => LoginPage(),
   };
 
 }

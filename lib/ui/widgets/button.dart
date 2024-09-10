@@ -24,12 +24,12 @@ Widget MainElevatedButton(
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const SizedBox(width: 16.0),
+          const SizedBox(width: 24.0),
           Expanded(
             child: Center(
               child: Text(
                 textButton,
-                style: AppStyles.button,
+                style: AppStyles.button.copyWith(color: Colors.white),
               ),
             ),
           ),
