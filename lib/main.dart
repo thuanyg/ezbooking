@@ -1,8 +1,6 @@
 import 'package:ezbooking/routes.dart';
 import 'package:ezbooking/ui/pages/splash_page.dart';
-import 'package:ezbooking/ui/widgets/inputfield.dart';
 import 'package:flutter/material.dart';
-import 'package:ezbooking/ui/widgets/button.dart';
 
 void main() {
   runApp(const MyApp());

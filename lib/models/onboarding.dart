@@ -1,5 +1,6 @@
 class Onboarding {
   String title;
   String desc;
-  Onboarding(this.title, this.desc);
+  String imageLink;
+  Onboarding(this.title, this.desc, this.imageLink);
 }
