@@ -1,5 +1,5 @@
 import 'package:ezbooking/ui/pages/home_page.dart';
-import 'package:ezbooking/ui/pages/onboarding_page.dart';
+import 'package:ezbooking/ui/onboarding/onboarding_page.dart';
 import 'package:ezbooking/utils/app_colors.dart';
 import 'package:ezbooking/utils/app_styles.dart';
 import 'package:ezbooking/utils/constants.dart';

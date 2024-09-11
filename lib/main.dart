@@ -1,9 +1,15 @@
 import 'package:ezbooking/routes.dart';
-import 'package:ezbooking/ui/pages/login_page.dart';
+import 'package:ezbooking/ui/login/login_page.dart';
 import 'package:ezbooking/ui/pages/splash_page.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 

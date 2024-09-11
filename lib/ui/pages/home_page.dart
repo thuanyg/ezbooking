@@ -1,5 +1,5 @@
-import 'package:ezbooking/ui/widgets/button.dart';
-import 'package:ezbooking/ui/widgets/inputfield.dart';
+import 'package:ezbooking/widgets/button.dart';
+import 'package:ezbooking/widgets/inputfield.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatelessWidget {

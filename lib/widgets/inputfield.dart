@@ -10,8 +10,8 @@ class CustomInputField extends StatefulWidget {
       required this.label,
       this.obscureText = false,
       this.prefixIconName,
-      controller,
-      validator});
+      this.controller,
+      this.validator});
 
   String? label;
   bool obscureText = false;
@@ -37,6 +37,7 @@ class _CustomInputFieldState extends State<CustomInputField> {
       controller: widget.controller,
       validator: widget.validator,
       obscureText: widget.obscureText,
+      cursorErrorColor: Colors.red,
       decoration: InputDecoration(
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
