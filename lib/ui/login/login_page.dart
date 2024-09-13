@@ -3,6 +3,8 @@ import 'package:ezbooking/services/auth_service.dart';
 import 'package:ezbooking/ui/login/bloc/login_bloc.dart';
 import 'package:ezbooking/ui/login/bloc/login_event.dart';
 import 'package:ezbooking/ui/login/bloc/login_state.dart';
+import 'package:ezbooking/ui/pages/home_page.dart';
+import 'package:ezbooking/ui/reset_password/reset_password.dart';
 import 'package:ezbooking/ui/signup/signup_page.dart';
 import 'package:ezbooking/utils/app_validate.dart';
 import 'package:ezbooking/widgets/auth_with_3rd.dart';
@@ -49,7 +51,6 @@ class _LoginPageState extends State<LoginPage> {
           bloc: LoginBloc(authRepository),
           builder: (context, state) {
             return Scaffold(
-              backgroundColor: const Color(0xFFEFEFEF),
               body: Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
@@ -88,48 +89,7 @@ class _LoginPageState extends State<LoginPage> {
                           validator: Validator.validatePassword,
                         ),
                         const SizedBox(height: 8.0),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Transform.scale(
-                                  scale: .5,
-                                  child: Switch(
-                                    value: _switchRememberMe,
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _switchRememberMe = value;
-                                      });
-                                    },
-                                  ),
-                                ),
-                                Text(
-                                  "Remember me",
-                                  style: AppStyles.title2.copyWith(
-                                    fontWeight: FontWeight.w500,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Expanded(
-                              child: Align(
-                                alignment: Alignment.centerRight,
-                                child: TextButton(
-                                  onPressed: () {},
-                                  child: Text(
-                                    "Forgot password?",
-                                    style: AppStyles.title2.copyWith(
-                                      fontWeight: FontWeight.w500,
-                                      fontStyle: FontStyle.italic,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                        buildLoginOtherFunction(),
                         const SizedBox(height: 36.0),
                         MainElevatedButton(
                           textButton: "LOGIN",
@@ -139,30 +99,7 @@ class _LoginPageState extends State<LoginPage> {
                           },
                         ),
                         const SizedBox(height: 24.0),
-                        const Row(
-                          children: [
-                            Expanded(
-                              child: Divider(
-                                color: Colors.grey,
-                                thickness: 1,
-                              ),
-                            ),
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Text(
-                                'OR',
-                                style: TextStyle(color: Colors.grey),
-                              ),
-                            ),
-                            Expanded(
-                              child: Divider(
-                                color: Colors.grey,
-                                thickness: 1,
-                              ),
-                            ),
-                          ],
-                        ),
+                        buildDivider(),
                         const SizedBox(height: 16.0),
                         buildAuthWithGoogle(() => {}),
                         const SizedBox(height: 16.0),
@@ -208,11 +145,85 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  Row buildDivider() {
+    return const Row(
+      children: [
+        Expanded(
+          child: Divider(
+            color: Colors.grey,
+            thickness: 1,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: Text(
+            'OR',
+            style: TextStyle(color: Colors.grey),
+          ),
+        ),
+        Expanded(
+          child: Divider(
+            color: Colors.grey,
+            thickness: 1,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Row buildLoginOtherFunction() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Transform.scale(
+              scale: .5,
+              child: Switch(
+                value: _switchRememberMe,
+                onChanged: (value) {
+                  setState(() {
+                    _switchRememberMe = value;
+                  });
+                },
+              ),
+            ),
+            Text(
+              "Remember me",
+              style: AppStyles.title2.copyWith(
+                fontWeight: FontWeight.w500,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+        Expanded(
+          child: Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () {
+                Navigator.pushNamed(context, ResetPassword.routeName);
+              },
+              child: Text(
+                "Forgot password?",
+                style: AppStyles.title2.copyWith(
+                  fontWeight: FontWeight.w500,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   handleLogin(BuildContext context) async {
     String email = _emailController.text.trim();
     String password = _passwordController.text.trim();
-    if (_loginFormKey.currentState?.validate()  ?? false) {
-      BlocProvider.of<LoginBloc>(context).add(LoginEvent(email, password));
-    }
+    // if (_loginFormKey.currentState?.validate() ?? false) {
+    //   BlocProvider.of<LoginBloc>(context).add(LoginEvent(email, password));
+    // }
+    Navigator.pushNamed(context, HomePage.routeName);
   }
 }

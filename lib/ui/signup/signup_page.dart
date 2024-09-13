@@ -1,4 +1,5 @@
 import 'package:ezbooking/ui/login/login_page.dart';
+import 'package:ezbooking/ui/verification/verification_page.dart';
 import 'package:ezbooking/utils/app_colors.dart';
 import 'package:ezbooking/utils/app_styles.dart';
 import 'package:ezbooking/utils/app_validate.dart';
@@ -22,12 +23,9 @@ class SignupPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFEFEFEF),
-      appBar: AppBar(
-        backgroundColor: Color(0xFFEFEFEF),
-      ),
+     appBar: AppBar(),
       body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 28, vertical: 36),
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
         child: Center(
           child: Form(
             key: _signUpFormKey,
@@ -154,5 +152,6 @@ class SignupPage extends StatelessWidget {
     if (_signUpFormKey.currentState?.validate()  ?? false) {
       // BlocProvider.of<LoginBloc>(context).add(LoginEvent(email, password));
     }
+    Navigator.of(context).pushNamed(VerificationPage.routeName);
   }
 }
