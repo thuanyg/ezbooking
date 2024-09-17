@@ -1,6 +1,7 @@
 import 'package:ezbooking/routes.dart';
 import 'package:ezbooking/ui/event_detail/event_detail.dart';
 import 'package:ezbooking/ui/login/login_page.dart';
+import 'package:ezbooking/ui/pages/home_page.dart';
 import 'package:ezbooking/ui/pages/splash_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -30,7 +31,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       routes: Routes.routes,
-      home: EventDetail(),
+      home: HomePage(),
     );
   }
 }

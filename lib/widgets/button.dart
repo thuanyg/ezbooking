@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:ezbooking/utils/app_styles.dart';
 
 Widget MainElevatedButton(
-    {double width = 271,
+    {double width = 320,
     double height = 58,
     String textButton = "",
     String iconName = "",
@@ -45,7 +45,7 @@ Widget MainElevatedButton(
 
 // ignore: non_constant_identifier_names
 Widget MainOutlineButton(
-    {double width = 271,
+    {double width = 320,
     double height = 58,
     String textButton = "",
     String iconName = "",
@@ -153,6 +153,58 @@ Widget RIConElevatedButton(
             ),
           ),
         ],
+      ),
+    ),
+  );
+}
+
+Widget StandardElevatedButton(
+    {double height = 28, String textButton = "", Function()? onTap}) {
+  return InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(15),
+    child: Container(
+      clipBehavior: Clip.antiAlias,
+      height: height,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.primaryColor,
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: Center(
+        child: Text(
+          textButton,
+          style: AppStyles.button.copyWith(
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+              fontSize: 12),
+        ),
+      ),
+    ),
+  );
+}
+
+Widget StandardOutlinedButton(
+    {double height = 28, String textButton = "", Function()? onTap}) {
+  return InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(15),
+    child: Container(
+      clipBehavior: Clip.antiAlias,
+      height: height,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.outlinedButtonColor,
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: Center(
+        child: Text(
+          textButton,
+          style: AppStyles.button.copyWith(
+              fontWeight: FontWeight.w500,
+              color: AppColors.primaryColor,
+              fontSize: 12),
+        ),
       ),
     ),
   );

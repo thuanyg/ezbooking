@@ -28,6 +28,40 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: Drawer(
+        width: MediaQuery.of(context).size.width * 0.7,
+        elevation: 8,
+        backgroundColor: Colors.white,
+        child: Column(
+          children: [
+            const SizedBox(height: 36),
+            CircleAvatar(
+              radius: 40,
+              backgroundColor: Colors.black12,
+              child: ImageHelper.loadAssetImage("${assetImageLink}ic_avatar.png", width: 40, height: 40, fit: BoxFit.cover),
+            ),
+            Text("ThuanHT", style: AppStyles.title1,),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: ListView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemBuilder: (context, index) {
+                    return InkWell(
+                      onTap: (){},
+                      child: ListTile(
+                        leading: ImageHelper.loadAssetImage(drawerItems[index].icon),
+                        title: Text(drawerItems[index].label),
+                      ),
+                    );
+                  },
+                  itemCount: drawerItems.length,
+                ),
+              ),
+            ),
+          ],
+        )
+      ),
       body: PageView(
         controller: _pageViewController,
         scrollDirection: Axis.horizontal,

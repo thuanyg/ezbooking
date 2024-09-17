@@ -64,5 +64,11 @@ class AppStyles {
     fontSize: 15,
     color: Colors.grey
   );
+
+  static TextStyle titleAppBar = const TextStyle(
+      fontFamily: 'Poppins',
+      fontSize: 24,
+      color: Colors.black
+  );
   
 }

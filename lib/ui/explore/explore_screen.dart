@@ -1,3 +1,4 @@
+import 'package:ezbooking/ui/event_detail/event_detail.dart';
 import 'package:ezbooking/utils/app_colors.dart';
 import 'package:ezbooking/utils/app_styles.dart';
 import 'package:ezbooking/utils/constants.dart';
@@ -5,7 +6,6 @@ import 'package:ezbooking/utils/image_helper.dart';
 import 'package:ezbooking/widgets/cards.dart';
 import 'package:ezbooking/widgets/category.dart';
 import 'package:flutter/material.dart';
-import 'package:sticky_headers/sticky_headers.dart';
 
 class ExploreScreen extends StatelessWidget {
   const ExploreScreen({super.key});
@@ -28,7 +28,10 @@ class ExploreScreen extends StatelessWidget {
                   ),
                 ),
                 child: Column(
-                  children: [buildHeaderSticky(), buildHeaderSearch()],
+                  children: [
+                    buildHeaderStickyWidget(context),
+                    buildHeaderSearch()
+                  ],
                 ),
               ),
             ],
@@ -47,62 +50,46 @@ class ExploreScreen extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 24),
       child: Column(
         children: [
-          buildShowByCategory(label: 'Upcoming Events', onSeeAll: () {}),
           buildUpcomingEvent(),
           buildShowByCategory(label: 'Popular Now', onSeeAll: () {}),
           buildPopularNowEvent(),
           buildShowByCategory(label: 'Popular Now', onSeeAll: () {}),
           buildPopularNowEvent(),
+          buildShowByCategory(label: 'Popular Now', onSeeAll: () {}),
+          buildPopularNowEvent(),
+          buildUpcomingEvent(),
+          buildUpcomingEvent(),
+          buildUpcomingEvent(),
+          buildUpcomingEvent(),
+          buildUpcomingEvent(),
+          buildUpcomingEvent(),
+          buildUpcomingEvent(),
+          buildUpcomingEvent(),
         ],
       ),
     );
 
-
     return CustomScrollView(
       slivers: [
+        // SliverAppBar(
+        //   expandedHeight: 180,
+        //   flexibleSpace: FlexibleSpaceBar(
+        //     collapseMode: CollapseMode.pin,
+        //     stretchModes: const [StretchMode.blurBackground],
+        //     background: header,
+        //   ),
+        // ),
         SliverToBoxAdapter(
           child: header,
+        ),
+        SliverPersistentHeader(
+          delegate: HeaderStickyDelegate(),
+          pinned: true,
         ),
         SliverToBoxAdapter(
           child: body,
         )
       ],
-    );
-  }
-
-  Widget buildHeaderSticky() {
-    return Container(
-      margin: const EdgeInsets.only(top: 44),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-            child: ImageHelper.loadAssetImage("${assetImageLink}ic_menu.png"),
-          ),
-          const Column(
-            children: [
-              Text(
-                "Current Location",
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w300),
-              ),
-              Text("New Yourk, USA",
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400)),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: ImageHelper.loadAssetImage("${assetImageLink}ic_ring.png"),
-          ),
-        ],
-      ),
     );
   }
 
@@ -150,37 +137,6 @@ class ExploreScreen extends StatelessWidget {
     );
   }
 
-  Widget buildShowByCategory(
-      {required String label, required VoidCallback onSeeAll}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: AppStyles.title1.copyWith(fontWeight: FontWeight.w400),
-          ),
-          Row(
-            children: [
-              InkWell(
-                onTap: onSeeAll,
-                child: Text(
-                  "See All",
-                  style: AppStyles.title1.copyWith(
-                    fontWeight: FontWeight.w400,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-              const Icon(Icons.arrow_right)
-            ],
-          )
-        ],
-      ),
-    );
-  }
-
   Widget buildUpcomingEvent() {
     return SizedBox(
       height: 260,
@@ -190,11 +146,16 @@ class ExploreScreen extends StatelessWidget {
         itemBuilder: (context, index) {
           return Container(
             margin: const EdgeInsets.only(right: 12),
-            child: UpcomingCard(
-              title: "International Band Events",
-              date: "10 June",
-              imageLink: "${assetImageLink}img_event_example.png",
-              location: "36 Guild Street London, UK ",
+            child: InkWell(
+              onTap: () {
+                Navigator.of(context).pushNamed(EventDetail.routeName);
+              },
+              child: UpcomingCard(
+                title: "International Band Events",
+                date: "10 June",
+                imageLink: "${assetImageLink}img_event_example.png",
+                location: "36 Guild Street London, UK ",
+              ),
             ),
           );
         },
@@ -208,10 +169,11 @@ class ExploreScreen extends StatelessWidget {
       child: GridView.builder(
         scrollDirection: Axis.horizontal,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 4,
-            childAspectRatio: 0.3),
+          crossAxisCount: 2,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 4,
+          childAspectRatio: 0.3,
+        ),
         itemCount: 10,
         itemBuilder: (context, index) {
           return PopularCard(
@@ -226,54 +188,109 @@ class ExploreScreen extends StatelessWidget {
   }
 }
 
-class StickyDelegate extends SliverPersistentHeaderDelegate {
-  @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return Container(
-      color: AppColors.primaryColor,
-      margin: const EdgeInsets.only(top: 26),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Padding(
+Widget buildShowByCategory(
+    {required String label, required VoidCallback onSeeAll}) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 16),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: AppStyles.title1.copyWith(fontWeight: FontWeight.w400),
+        ),
+        Row(
+          children: [
+            InkWell(
+              onTap: onSeeAll,
+              child: Text(
+                "See All",
+                style: AppStyles.title1.copyWith(
+                  fontWeight: FontWeight.w400,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            const Icon(Icons.arrow_right)
+          ],
+        )
+      ],
+    ),
+  );
+}
+
+Widget buildHeaderStickyWidget(BuildContext context) {
+  return Container(
+    margin: const EdgeInsets.only(top: 36),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        InkWell(
+          onTap: () {
+            Scaffold.of(context).openDrawer();
+          },
+          child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
             child: ImageHelper.loadAssetImage("${assetImageLink}ic_menu.png"),
           ),
-          const Column(
-            children: [
-              Text(
-                "Current Location",
+        ),
+        const Column(
+          children: [
+            Text(
+              "Current Location",
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w300),
+            ),
+            Text("New Yourk, USA",
                 style: TextStyle(
                     color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w300),
-              ),
-              Text("New Yourk, USA",
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w400)),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: ImageHelper.loadAssetImage("${assetImageLink}ic_ring.png"),
-          ),
-        ],
-      ),
-    );
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400)),
+          ],
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: ImageHelper.loadAssetImage("${assetImageLink}ic_ring.png"),
+        ),
+      ],
+    ),
+  );
+}
+
+const _maxHeaderExtent = 80.0;
+
+class HeaderStickyDelegate extends SliverPersistentHeaderDelegate {
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    var percent = shrinkOffset / _maxHeaderExtent;
+    if (percent > 0.1) {
+      return Container(
+        height: 100,
+        color: AppColors.primaryColor,
+        child: buildHeaderStickyWidget(context),
+      );
+    } else {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        height: 80,
+        child: buildShowByCategory(label: 'Upcoming Events', onSeeAll: () {}),
+      );
+    }
   }
 
   @override
-  double get maxExtent => 100.0; // Chiều cao tối đa
+  // TODO: implement maxExtent
+  double get maxExtent => _maxHeaderExtent;
 
   @override
-  double get minExtent => 100.0; // Chiều cao tối thiểu
+  // TODO: implement minExtent
+  double get minExtent => _maxHeaderExtent;
 
   @override
-  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
-    return true;
-  }
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) =>
+      false;
 }

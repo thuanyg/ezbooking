@@ -1,3 +1,4 @@
+import 'package:ezbooking/utils/app_colors.dart';
 import 'package:ezbooking/utils/app_styles.dart';
 import 'package:ezbooking/utils/constants.dart';
 import 'package:ezbooking/utils/image_helper.dart';
@@ -131,6 +132,86 @@ class PopularCard extends StatelessWidget {
             Expanded(
               child: Column(
                 children: [
+                  Text(
+                    title,
+                    style: AppStyles.title1,
+                    maxLines: 2,
+                    textAlign: TextAlign.start,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Row(
+                    children: [
+                      ImageHelper.loadAssetImage(
+                        "${assetImageLink}ic_location.png",
+                        height: 14,
+                        tintColor: Colors.grey,
+                      ),
+                      const SizedBox(width: 4.0),
+                      Text(
+                        location,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppStyles.title2.copyWith(
+                            color: Colors.grey,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                            fontStyle: FontStyle.italic),
+                      )
+                    ],
+                  ),
+                ],
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class EventStandardCard extends StatelessWidget {
+  EventStandardCard({
+    super.key,
+    required this.title,
+    required this.date,
+    required this.imageLink,
+    required this.location,
+  });
+
+  String imageLink, date, title, location;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    return Card(
+      color: Colors.white,
+      elevation: 1,
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Row(
+          children: [
+            ImageHelper.loadAssetImage(
+              imageLink,
+              height: 100,
+              width: 85,
+              fit: BoxFit.cover,
+              radius: BorderRadius.circular(12),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    date,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppStyles.title2.copyWith(
+                        color: AppColors.primaryColor,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        fontStyle: FontStyle.italic),
+                  ),
                   Text(
                     title,
                     style: AppStyles.title1,
