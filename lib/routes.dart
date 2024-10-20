@@ -1,12 +1,12 @@
-import 'package:ezbooking/ui/pages/home_page.dart';
-import 'package:ezbooking/ui/login/login_page.dart';
-import 'package:ezbooking/ui/onboarding/onboarding_page.dart';
-import 'package:ezbooking/ui/pages/splash_page.dart';
-import 'package:ezbooking/ui/reset_password/reset_password.dart';
-import 'package:ezbooking/ui/signup/signup_page.dart';
+import 'package:ezbooking/presentation/pages/home/home_page.dart';
+import 'package:ezbooking/presentation/pages/login/login_page.dart';
+import 'package:ezbooking/presentation/pages/onboarding/onboarding_page.dart';
+import 'package:ezbooking/presentation/pages/splash/splash_page.dart';
+import 'package:ezbooking/presentation/pages/resetpassword/reset_password.dart';
+import 'package:ezbooking/presentation/pages/signup/signup_page.dart';
 import 'package:flutter/material.dart';
-import 'package:ezbooking/ui/verification/verification_page.dart';
-import 'package:ezbooking/ui/event_detail/event_detail.dart';
+import 'package:ezbooking/presentation/pages/verification/verification_page.dart';
+import 'package:ezbooking/presentation/pages/event/event_detail.dart';
 
 class Routes {
   static Map<String, WidgetBuilder> routes = {
