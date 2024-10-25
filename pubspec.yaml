@@ -33,6 +33,11 @@ dependencies:
   dio: ^5.7.0
   get_it: ^8.0.0
   flutter_secure_storage: ^9.2.2
+  syncfusion_flutter_datepicker: ^27.1.55
+  freezed: ^2.5.7
+  build_runner: ^2.4.13
+  firebase_ui_firestore: ^1.7.0
+  shimmer: ^3.0.0
 
 dev_dependencies:
   flutter_test:

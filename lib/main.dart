@@ -1,10 +1,14 @@
 import 'package:ezbooking/data/datasources/auth_datasource.dart';
-import 'package:ezbooking/data/repositories/auth_repository_impl.dart';
+import 'package:ezbooking/data/repositories/auth/auth_repository_impl.dart';
 import 'package:ezbooking/domain/usecases/auth/auth_usecase.dart';
 import 'package:ezbooking/injection_container.dart';
+import 'package:ezbooking/presentation/pages/event/bloc/event_detail_bloc.dart';
 import 'package:ezbooking/presentation/pages/login/bloc/login_bloc.dart';
 import 'package:ezbooking/presentation/pages/signup/bloc/signup_bloc.dart';
 import 'package:ezbooking/presentation/pages/splash/splash_page.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/filter_bloc.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/latest_event_bloc.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/upcoming_event_bloc.dart';
 import 'package:ezbooking/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -21,6 +25,10 @@ void main() async {
       providers: [
         BlocProvider(create: (_) => sl<LoginBloc>()),
         BlocProvider(create: (_) => sl<SignupBloc>()),
+        BlocProvider(create: (_) => sl<LatestEventBloc>()),
+        BlocProvider(create: (_) => sl<UpcomingEventBloc>()),
+        BlocProvider(create: (_) => sl<EventDetailBloc>()),
+        BlocProvider(create: (_) => FilterBloc()),
       ],
       child: const MyApp(),
     ),
@@ -38,7 +46,10 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         scaffoldBackgroundColor: Colors.white,
-        appBarTheme: const AppBarTheme(color: Colors.white),
+        appBarTheme: const AppBarTheme(
+          elevation: 1,
+          backgroundColor: Colors.white,
+        ),
         useMaterial3: true,
       ),
       routes: Routes.routes,

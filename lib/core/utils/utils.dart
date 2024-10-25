@@ -5,7 +5,7 @@ enum ValidateType { email, password, name, phone }
 
 class AppUtils {
   static String formatCurrency(double value) {
-    return NumberFormat.currency(locale: 'vi_VN', symbol: '')
+    return NumberFormat.compact(locale: 'en_US')
         .format(value.round());
   }
 

@@ -1,13 +1,21 @@
 import 'package:ezbooking/core/utils/utils.dart';
-import 'package:ezbooking/presentation/pages/event/event_detail.dart';
 import 'package:ezbooking/core/config/app_colors.dart';
 import 'package:ezbooking/core/config/app_styles.dart';
 import 'package:ezbooking/core/config/constants.dart';
 import 'package:ezbooking/core/utils/image_helper.dart';
+import 'package:ezbooking/presentation/pages/event/event_upcoming.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/filter_bloc.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/filter_event.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/latest_event_bloc.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/upcoming_event_bloc.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/upcoming_event_event.dart';
+import 'package:ezbooking/presentation/screens/explore/widgets/up_coming_event.dart';
 import 'package:ezbooking/presentation/widgets/button.dart';
 import 'package:ezbooking/presentation/widgets/cards.dart';
 import 'package:ezbooking/presentation/widgets/category.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
@@ -16,30 +24,37 @@ class ExploreScreen extends StatefulWidget {
   State<ExploreScreen> createState() => _ExploreScreenState();
 }
 
-class _ExploreScreenState extends State<ExploreScreen> {
-  List<FilterItem> selectedFilterItems = [];
-  List<String> selectedTime = [];
-  DateTime? _selectedDate;
-  late RangeValues _currentRangeValues = const RangeValues(0, 0);
+class _ExploreScreenState extends State<ExploreScreen>
+    with AutomaticKeepAliveClientMixin {
+  // Bloc
+  late FilterBloc filterBloc;
+  late final UpcomingEventBloc upcomingEventBloc;
+  late final LatestEventBloc latestEventBloc;
 
-  Future showSelectDate(BuildContext context) async {
-    showDatePicker(
+  @override
+  void initState() {
+    super.initState();
+    upcomingEventBloc = BlocProvider.of<UpcomingEventBloc>(context);
+    latestEventBloc = BlocProvider.of<LatestEventBloc>(context);
+    filterBloc = BlocProvider.of<FilterBloc>(context);
+    // Fetch Data Initial
+    upcomingEventBloc.add(FetchUpcomingEvent(limit: 10));
+  }
+
+  Future<DateTime?> showSelectDate(BuildContext context) async {
+    DateTime? dateTime = await showDatePicker(
       context: context,
       helpText: "Select Date",
-      initialDate: DateTime.now(),
+      initialDate: filterBloc.selectedDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2050),
-    ).then(
-      (DateTime? selected) {
-        if (selected != null && selected != _selectedDate) {
-          setState(() => _selectedDate = selected);
-        }
-      },
     );
+    return dateTime;
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final header = SizedBox(
       height: 200,
       child: Stack(
@@ -75,24 +90,16 @@ class _ExploreScreenState extends State<ExploreScreen> {
       ),
     );
     final body = Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 24),
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 18),
       child: Column(
         children: [
-          buildUpcomingEvent(),
+          const UpComingEvent(),
           buildShowByCategory(label: 'Popular Now', onSeeAll: () {}),
           buildPopularNowEvent(),
           buildShowByCategory(label: 'Popular Now', onSeeAll: () {}),
           buildPopularNowEvent(),
           buildShowByCategory(label: 'Popular Now', onSeeAll: () {}),
           buildPopularNowEvent(),
-          buildUpcomingEvent(),
-          buildUpcomingEvent(),
-          buildUpcomingEvent(),
-          buildUpcomingEvent(),
-          buildUpcomingEvent(),
-          buildUpcomingEvent(),
-          buildUpcomingEvent(),
-          buildUpcomingEvent(),
         ],
       ),
     );
@@ -115,7 +122,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   Widget buildHeaderSearch(BuildContext context) {
     return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
+        padding: const EdgeInsets.only(left: 24, right: 24, top: 10),
         child: Row(
           children: [
             const Icon(
@@ -139,23 +146,35 @@ class _ExploreScreenState extends State<ExploreScreen> {
               onTap: () {
                 buildFilterBottomSheet(context);
               },
-              child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(50),
-                    color: const Color(0xFF5D56F3),
-                  ),
-                  child: Row(
-                    children: [
-                      Image.asset("${assetImageLink}ic_filter.png"),
-                      const SizedBox(width: 4),
-                      const Text(
-                        "Filters",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ],
-                  )),
+              child: BlocBuilder(
+                bloc: filterBloc,
+                builder: (context, state) {
+                  return Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(50),
+                      color: const Color(0xFF5D56F3),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          filterBloc.hasFilter()
+                              ? Icons.filter_alt
+                              : Icons.filter_alt_off_rounded,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 4),
+                        const Text(
+                          "Filters",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             )
           ],
         ));
@@ -168,9 +187,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
       isScrollControlled: true,
       context: context,
       builder: (builder) {
-        return StatefulBuilder(
+        return BlocBuilder(
+          bloc: filterBloc,
           // Use StatefulBuilder to handle state changes
-          builder: (BuildContext context, StateSetter setState) {
+          builder: (context, state) {
             return Container(
               height: MediaQuery.of(context).size.height * 0.80,
               width: double.maxFinite,
@@ -183,336 +203,230 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     topRight: Radius.circular(50),
                   ),
                 ),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 150, vertical: 8),
-                        child: Container(
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade400,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                        ),
-                      ),
-                      Text("Filters", style: AppStyles.h4),
-                      SizedBox(
-                        height: 120,
-                        child: ListView.builder(
-                          itemCount: filterItems.length,
-                          scrollDirection: Axis.horizontal,
-                          itemBuilder: (context, index) {
-                            bool isSelected =
-                                selectedFilterItems.contains(filterItems[index]);
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 8),
-                              child: InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    if (isSelected) {
-                                      selectedFilterItems.remove(filterItems[index]);
-                                    } else {
-                                      selectedFilterItems.add(filterItems[index]);
-                                    }
-                                  });
-                                },
-                                child: Column(
-                                  children: <Widget>[
-                                    Container(
-                                      width: 60,
-                                      height: 60,
-                                      padding: const EdgeInsets.all(20),
-                                      clipBehavior: Clip.antiAlias,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: isSelected
-                                              ? Colors.white
-                                              : AppColors.borderOutlineColor,
-                                          width: 1.5,
-                                        ),
-                                        color: isSelected
-                                            ? AppColors.primaryColor
-                                            : Colors.white,
-                                      ),
-                                      child: ImageHelper.loadAssetImage(
-                                        filterItems[index].icon,
-                                        fit: BoxFit.cover,
-                                        tintColor: isSelected
-                                            ? Colors.white
-                                            : Colors.grey,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Expanded(
-                                        child: Text(
-                                      filterItems[index].label,
-                                      style: const TextStyle(fontSize: 16),
-                                    ))
-                                  ],
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      Text("Time & Date", style: AppStyles.h5),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          InkWell(
-                            onTap: () {
-                              setState(() {
-                                if (selectedTime.contains("Today")) {
-                                  selectedTime.remove("Today");
-                                } else {
-                                  selectedTime.add("Today");
-                                }
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: selectedTime.contains("Today")
-                                    ? AppColors.primaryColor
-                                    : Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: selectedTime.contains("Today")
-                                      ? Colors.white
-                                      : AppColors.borderOutlineColor,
-                                ),
-                              ),
-                              child: Text(
-                                "Today",
-                                style: TextStyle(
-                                  color: selectedTime.contains("Today")
-                                      ? Colors.white
-                                      : Colors.black,
-                                ),
-                              ),
-                            ),
-                          ),
-                          InkWell(
-                            onTap: () {
-                              setState(() {
-                                if (selectedTime.contains("Tomorrow")) {
-                                  selectedTime.remove("Tomorrow");
-                                } else {
-                                  selectedTime.add("Tomorrow");
-                                }
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: selectedTime.contains("Tomorrow")
-                                    ? AppColors.primaryColor
-                                    : Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: selectedTime.contains("Tomorrow")
-                                      ? Colors.white
-                                      : AppColors.borderOutlineColor,
-                                ),
-                              ),
-                              child: Text(
-                                "Tomorrow",
-                                style: TextStyle(
-                                  color: selectedTime.contains("Tomorrow")
-                                      ? Colors.white
-                                      : Colors.black,
-                                ),
-                              ),
-                            ),
-                          ),
-                          InkWell(
-                            onTap: () {
-                              setState(() {
-                                if (selectedTime.contains("This week")) {
-                                  selectedTime.remove("This week");
-                                } else {
-                                  selectedTime.add("This week");
-                                }
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: selectedTime.contains("This week")
-                                    ? AppColors.primaryColor
-                                    : Colors.white,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: selectedTime.contains("This week")
-                                      ? Colors.white
-                                      : AppColors.borderOutlineColor,
-                                ),
-                              ),
-                              child: Text(
-                                "This week",
-                                style: TextStyle(
-                                  color: selectedTime.contains("This week")
-                                      ? Colors.white
-                                      : Colors.black,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      InkWell(
-                        onTap: () async {
-                          await showSelectDate(context);
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 48),
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 18, vertical: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Padding(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
+                              horizontal: 130, vertical: 8),
+                          child: Container(
+                            height: 6,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade400,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                          ),
+                        ),
+                        Text("Filters", style: AppStyles.h4),
+                        SizedBox(
+                          height: 120,
+                          child: ListView.builder(
+                            itemCount: filterItems.length,
+                            scrollDirection: Axis.horizontal,
+                            itemBuilder: (context, index) {
+                              bool isSelected = filterBloc.selectedFilterItems
+                                  .contains(filterItems[index]);
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 8),
+                                child: InkWell(
+                                  onTap: () {
+                                    filterBloc.add(
+                                        SelectFilterItem(filterItems[index]));
+                                  },
+                                  child: Column(
+                                    children: <Widget>[
+                                      Container(
+                                        width: 60,
+                                        height: 60,
+                                        padding: const EdgeInsets.all(20),
+                                        clipBehavior: Clip.antiAlias,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: isSelected
+                                                ? Colors.white
+                                                : AppColors.borderOutlineColor,
+                                            width: 1.5,
+                                          ),
+                                          color: isSelected
+                                              ? AppColors.primaryColor
+                                              : Colors.white,
+                                        ),
+                                        child: ImageHelper.loadAssetImage(
+                                          filterItems[index].icon,
+                                          fit: BoxFit.cover,
+                                          tintColor: isSelected
+                                              ? Colors.white
+                                              : Colors.grey,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Expanded(
+                                          child: Text(
+                                        filterItems[index].label,
+                                        style: const TextStyle(fontSize: 16),
+                                      ))
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        Text("Time & Date", style: AppStyles.h5),
+                        const SizedBox(height: 8),
+                        InkWell(
+                          onTap: () async {
+                            final selectedDate = await showSelectDate(context);
+                            if (selectedDate != null) {
+                              filterBloc.add(SetSelectedDate(selectedDate));
+                            }
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(
+                              vertical: 8,
+                              horizontal: 48,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: AppColors.borderOutlineColor,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.calendar_month,
+                                  color: AppColors.primaryColor,
+                                ),
+                                Text(
+                                  filterBloc.selectedDate != null
+                                      ? DateFormat("yyyy-MM-dd")
+                                          .format(filterBloc.selectedDate!)
+                                      : "Choose from calender",
+                                )
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text("Location", style: AppStyles.h5),
+                        const SizedBox(height: 8),
+                        Container(
+                          height: 60,
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: AppColors.borderOutlineColor,
+                            border:
+                                Border.all(color: AppColors.borderOutlineColor),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Container(
+                                  height: 36,
+                                  width: 36,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    color: const Color(0xffE6E9FF),
+                                  ),
+                                  child: Icon(
+                                    Icons.location_on_outlined,
+                                    color: AppColors.primaryColor,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                const Expanded(child: Text("Ha Noi, VietNam")),
+                                Icon(
+                                  Icons.arrow_forward_ios_outlined,
+                                  color: AppColors.primaryColor,
+                                  size: 16,
+                                )
+                              ],
                             ),
                           ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.calendar_month,
-                                color: AppColors.primaryColor,
-                              ),
-                              Text(
-                                _selectedDate != null
-                                    ? _selectedDate.toString()
-                                    : "Choose from calender",
-                              )
-                            ],
-                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text("Location", style: AppStyles.h5),
-                      const SizedBox(height: 8),
-                      Container(
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          border:
-                              Border.all(color: AppColors.borderOutlineColor),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                        const SizedBox(height: 16),
+                        Text("Select price range", style: AppStyles.h5),
+                        const SizedBox(height: 16),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0, vertical: 8),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Container(
-                                height: 36,
-                                width: 36,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(10),
-                                  color: const Color(0xffE6E9FF),
-                                ),
-                                child: Icon(
-                                  Icons.location_on_outlined,
-                                  color: AppColors.primaryColor,
+                              Text(
+                                'Min: ${AppUtils.formatCurrency(filterBloc.currentRangeValues.start)} VND',
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 16,
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              const Expanded(child: Text("Ha Noi, VietNam")),
-                              Icon(
-                                Icons.arrow_forward_ios_outlined,
-                                color: AppColors.primaryColor,
-                                size: 16,
-                              )
+                              Text(
+                                'Max: ${AppUtils.formatCurrency(filterBloc.currentRangeValues.end)} VND',
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 16,
+                                ),
+                              ),
                             ],
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text("Select price range", style: AppStyles.h5),
-                      const SizedBox(height: 16),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0, vertical: 8),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Min: ${AppUtils.formatCurrency(_currentRangeValues.start)} VND',
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 16,
-                              ),
-                            ),
-                            Text(
-                              'Max: ${AppUtils.formatCurrency(_currentRangeValues.end)} VND',
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ],
+                        // RangeSlider
+                        RangeSlider(
+                          values: filterBloc.currentRangeValues,
+                          activeColor: AppColors.primaryColor,
+                          max: 3000000,
+                          // 10 million VND
+                          divisions: 100,
+                          labels: RangeLabels(
+                            AppUtils.formatCurrency(
+                                filterBloc.currentRangeValues.start),
+                            AppUtils.formatCurrency(
+                                filterBloc.currentRangeValues.end),
+                          ),
+                          onChanged: (RangeValues values) {
+                            filterBloc.add(SetRangeValues(values));
+                          },
                         ),
-                      ),
-                      // RangeSlider
-                      RangeSlider(
-                        values: _currentRangeValues,
-                        activeColor: AppColors.primaryColor,
-                        max: 3000000,
-                        // 10 million VND
-                        divisions: 100,
-                        labels: RangeLabels(
-                          AppUtils.formatCurrency(_currentRangeValues.start),
-                          AppUtils.formatCurrency(_currentRangeValues.end),
-                        ),
-                        onChanged: (RangeValues values) {
-                          setState(() {
-                            _currentRangeValues = values;
-                          });
-                        },
-                      ),
-                      Expanded(
-                        child: Align(
+                        const SizedBox(height: 20),
+                        Align(
                           alignment: FractionalOffset.bottomCenter,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               MainOutlineButton(
                                 height: 60,
-                                width: size.width * 1/3 - 20,
+                                width: size.width * 1 / 3 - 20,
                                 textButton: "RESET",
-                                onTap: () {
-                                  setState(() {
-                                    selectedFilterItems.clear();
-                                    selectedTime.clear();
-                                    _selectedDate = null;
-                                    _currentRangeValues = const RangeValues(0, 0);
-                                  });
-                                },
+                                onTap: () => filterBloc.resetFilter(),
                               ),
                               MainElevatedButton(
                                 height: 60,
-                                width: size.width * 2/3 - 20,
+                                width: size.width * 2 / 3 - 20,
                                 textButton: "APPLY",
-                                onTap: () {},
+                                onTap: () {
+                                  Navigator.pop(context);
+                                },
                               ),
                             ],
                           ),
-                        ),
-                      )
-                    ],
+                        )
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -535,32 +449,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
             categoryName: categoryItems[index].label,
             icon: categoryItems[index].icon,
             color: categoryItems[index].color,
-          );
-        },
-      ),
-    );
-  }
-
-  Widget buildUpcomingEvent() {
-    return SizedBox(
-      height: 260,
-      child: ListView.builder(
-        itemCount: 10,
-        scrollDirection: Axis.horizontal,
-        itemBuilder: (context, index) {
-          return Container(
-            margin: const EdgeInsets.only(right: 12),
-            child: InkWell(
-              onTap: () {
-                Navigator.of(context).pushNamed(EventDetail.routeName);
-              },
-              child: UpcomingCard(
-                title: "International Band Events",
-                date: "10 June",
-                imageLink: "${assetImageLink}img_event_example.png",
-                location: "36 Guild Street London, UK ",
-              ),
-            ),
           );
         },
       ),
@@ -590,6 +478,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
       ),
     );
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }
 
 Widget buildShowByCategory(
@@ -656,7 +547,7 @@ Widget buildHeaderStickyWidget(BuildContext context) {
           ],
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
           child: ImageHelper.loadAssetImage("${assetImageLink}ic_ring.png"),
         ),
       ],
@@ -679,9 +570,14 @@ class HeaderStickyDelegate extends SliverPersistentHeaderDelegate {
       );
     } else {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 18),
         height: 80,
-        child: buildShowByCategory(label: 'Upcoming Events', onSeeAll: () {}),
+        child: buildShowByCategory(
+          label: 'Upcoming Events',
+          onSeeAll: () {
+            Navigator.of(context).pushNamed(EventUpComingPage.routeName);
+          },
+        ),
       );
     }
   }

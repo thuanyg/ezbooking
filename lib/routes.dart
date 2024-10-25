@@ -1,3 +1,4 @@
+import 'package:ezbooking/presentation/pages/event/event_upcoming.dart';
 import 'package:ezbooking/presentation/pages/home/home_page.dart';
 import 'package:ezbooking/presentation/pages/login/login_page.dart';
 import 'package:ezbooking/presentation/pages/onboarding/onboarding_page.dart';
@@ -18,6 +19,7 @@ class Routes {
     VerificationPage.routeName: (context) => VerificationPage(),
     ResetPassword.routeName: (context) => const ResetPassword(),
     EventDetail.routeName: (context) => const EventDetail(),
+    EventUpComingPage.routeName: (context) => const EventUpComingPage(),
   };
 
 }

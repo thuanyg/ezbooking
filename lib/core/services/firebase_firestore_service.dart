@@ -1,4 +1,4 @@
-  import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class FirebaseFirestoreService {
@@ -25,18 +25,24 @@ class FirebaseFirestoreService {
     return querySnapshot.docs;
   }
 
+  Future<List<QueryDocumentSnapshot>> getDocumentsWithLimit(
+      String collectionPath, int limit) async {
+    QuerySnapshot querySnapshot =
+        await _firestore.collection(collectionPath).limit(limit).get();
+    return querySnapshot.docs;
+  }
+
   // Phương thức này nhận vào các tham số để lọc theo khoảng ngày
   Stream<List<QueryDocumentSnapshot>> getDocumentsSnapshotWithConditions(
       String collectionPath,
       String dateField,
       String startDate,
       String endDate) {
-
     return _firestore
         .collection(collectionPath)
         .where(dateField, isGreaterThanOrEqualTo: startDate) // Lọc từ startDate
-        .where(dateField, isLessThanOrEqualTo: endDate)      // Lọc đến endDate
-        .snapshots()                                         // Lắng nghe sự thay đổi
+        .where(dateField, isLessThanOrEqualTo: endDate) // Lọc đến endDate
+        .snapshots() // Lắng nghe sự thay đổi
         .map((QuerySnapshot snapshot) {
       // Trả về danh sách các tài liệu
       return snapshot.docs;

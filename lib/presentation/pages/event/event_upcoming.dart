@@ -6,21 +6,21 @@ import 'package:ezbooking/presentation/widgets/cards.dart';
 import 'package:firebase_ui_firestore/firebase_ui_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:shimmer/shimmer.dart';
 
-class EventScreen extends StatefulWidget {
-  const EventScreen({super.key});
+class EventUpComingPage extends StatefulWidget {
+  const EventUpComingPage({super.key});
+
+  static String routeName = "EventUpComingPage";
 
   @override
-  State<EventScreen> createState() => _EventScreenState();
+  State<EventUpComingPage> createState() => _EventUpComingPageState();
 }
 
-class _EventScreenState extends State<EventScreen>
+class _EventUpComingPageState extends State<EventUpComingPage>
     with AutomaticKeepAliveClientMixin {
   bool isSearchEnabled = false;
   final TextEditingController searchEventController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  String searchQuery = ""; // Track the search query
 
   @override
   void dispose() {
@@ -42,30 +42,19 @@ class _EventScreenState extends State<EventScreen>
   }
 
   Widget _buildEventList() {
-    // Create a query that filters based on the search query
     final eventsQuery = FirebaseFirestore.instance
         .collection('events')
-        .where('name', isGreaterThanOrEqualTo: searchQuery)
-        .where('name', isLessThan: '$searchQuery\uf8ff') // To filter by prefix
+        .where("date", isGreaterThan: Timestamp.now())
         .orderBy('date', descending: true)
         .withConverter<Event>(
-      fromFirestore: (snapshot, _) => Event.fromJson(snapshot.data()!),
-      toFirestore: (event, _) => event.toMap(),
-    );
+          fromFirestore: (snapshot, _) => Event.fromJson(snapshot.data()!),
+          toFirestore: (event, _) => event.toMap(),
+        );
 
     return FirestoreListView<Event>(
       query: eventsQuery,
-      loadingBuilder: (context) => Shimmer.fromColors(
-        baseColor: Colors.white54,
-        highlightColor: Colors.white,
-        child: EventStandardCard(
-          title: "",
-          date: "",
-          imageLink: "",
-          location: "",
-          onPressed: () {},
-        ),
-      ),
+      loadingBuilder: (context) =>
+          const Center(child: CircularProgressIndicator()),
       errorBuilder: (context, error, stackTrace) => const Center(
         child: Text(
           "Error",
@@ -81,6 +70,7 @@ class _EventScreenState extends State<EventScreen>
         );
       },
       itemBuilder: (context, snapshot) {
+        // `post` has a type of `Post`.
         final event = snapshot.data();
         return EventStandardCard(
           title: event.name,
@@ -104,7 +94,7 @@ class _EventScreenState extends State<EventScreen>
       title: Align(
         alignment: Alignment.centerLeft,
         child: Text(
-          "Events",
+          "Upcoming events",
           style: AppStyles.titleAppBar,
         ),
       ),
@@ -117,7 +107,6 @@ class _EventScreenState extends State<EventScreen>
               setState(() {
                 isSearchEnabled = false;
                 searchEventController.clear();
-                searchQuery = ""; // Clear search query when disabled
               });
             },
             icon: const Icon(Icons.cancel),
@@ -138,25 +127,23 @@ class _EventScreenState extends State<EventScreen>
   Widget _buildSearchField() {
     return isSearchEnabled
         ? SizedBox(
-      width: MediaQuery.of(context).size.width * 0.55,
-      height: 44,
-      child: TextField(
-        autofocus: true,
-        controller: searchEventController,
-        style: const TextStyle(fontSize: 16.0, color: Colors.black),
-        decoration: InputDecoration(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          hintText: "Search event...",
-        ),
-        onChanged: (value) {
-          setState(() {
-            searchQuery = value.trim(); // Update search query
-          });
-        },
-      ),
-    )
+            width: MediaQuery.of(context).size.width * 0.55,
+            height: 44,
+            child: TextField(
+              autofocus: true,
+              controller: searchEventController,
+              style: const TextStyle(fontSize: 16.0, color: Colors.black),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                hintText: "Search event...",
+              ),
+              onChanged: (value) {
+                // Implement search functionality here
+              },
+            ),
+          )
         : const SizedBox.shrink();
   }
 

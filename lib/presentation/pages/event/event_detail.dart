@@ -2,19 +2,168 @@ import 'package:ezbooking/core/config/app_colors.dart';
 import 'package:ezbooking/core/config/app_styles.dart';
 import 'package:ezbooking/core/config/constants.dart';
 import 'package:ezbooking/core/utils/image_helper.dart';
+import 'package:ezbooking/data/models/event.dart';
+import 'package:ezbooking/presentation/pages/event/bloc/event_detail_bloc.dart';
+import 'package:ezbooking/presentation/pages/event/bloc/event_detail_event.dart';
+import 'package:ezbooking/presentation/pages/event/bloc/event_detail_state.dart';
 import 'package:ezbooking/presentation/widgets/button.dart';
 import 'package:ezbooking/presentation/widgets/event_subinfo.dart';
 import 'package:ezbooking/presentation/widgets/favorite.dart';
 import 'package:ezbooking/presentation/widgets/organizer.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
-class EventDetail extends StatelessWidget {
+class EventDetail extends StatefulWidget {
   static const String routeName = "EventDetail";
+
   const EventDetail({super.key});
 
   @override
+  State<EventDetail> createState() => _EventDetailState();
+}
+
+class _EventDetailState extends State<EventDetail> {
+  late EventDetailBloc eventDetailBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    eventDetailBloc = BlocProvider.of<EventDetailBloc>(context);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      String? eventID = ModalRoute.of(context)?.settings.arguments as String?;
+      eventDetailBloc.add(FetchEventDetail(eventID ?? ""));
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final header = SizedBox(
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: BlocBuilder<EventDetailBloc, EventDetailState>(
+          builder: (context, state) {
+            if (state is EventDetailLoading) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+
+            if (state is EventDetailLoaded) {
+              return CustomScrollView(
+                slivers: [
+                  SliverAppBar(
+                    automaticallyImplyLeading: false,
+                    expandedHeight: 268,
+                    flexibleSpace: FlexibleSpaceBar(
+                      collapseMode: CollapseMode.pin,
+                      stretchModes: const [StretchMode.blurBackground],
+                      background: buildHeader(context, state.event),
+                    ),
+                  ),
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: buildHeaderSliver(state.event),
+                  ),
+                  SliverToBoxAdapter(
+                    child: buildEventBody(state.event),
+                  )
+                ],
+              );
+            }
+
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+      floatingActionButton: BlocBuilder(
+        bloc: eventDetailBloc,
+        builder: (context, state) {
+          if (state is EventDetailLoaded) {
+            return Container(
+              decoration: BoxDecoration(boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(.3),
+                  // Shadow color with opacity
+                  spreadRadius: 1,
+                  // Spread the shadow
+                  blurRadius: 16,
+                  // Blur effect
+                  offset: const Offset(0, 10),
+                ),
+                BoxShadow(
+                  color: Colors.grey.withOpacity(.3),
+                  // Shadow color with opacity
+                  spreadRadius: 1,
+                  // Spread the shadow
+                  blurRadius: 24,
+                  // Blur effect
+                  offset: const Offset(0, -10),
+                ),
+              ]),
+              child: MainElevatedButton(
+                width: MediaQuery.of(context).size.width - 48,
+                textButton: "BUY TICKET (${state.event.ticketPrice}\$)",
+                iconName: "ic_button_next.png",
+              ),
+            );
+          }
+          return const SizedBox.shrink();
+        },
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+    );
+  }
+
+  SingleChildScrollView buildEventBody(Event event) {
+    return SingleChildScrollView(
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 74),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 20),
+            EventSubInformation(
+              title: DateFormat('d MMMM').format(event.date),
+              subtitle: DateFormat('EEEE, h:mm a').format(event.date),
+              iconName: "ic_event.png",
+            ),
+            const SizedBox(height: 20),
+            EventSubInformation(
+              title: event.location,
+              subtitle: "36 Guild Street London, UK ",
+              iconName: "ic_location.png",
+            ),
+            const SizedBox(height: 20),
+            const Organizer(
+                avatarImage: "ic_location.png",
+                organizerName: "Cartoon Network"),
+            const SizedBox(height: 20),
+            Text(
+              "About Event",
+              style: AppStyles.h5.copyWith(
+                fontWeight: FontWeight.w500,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              event.description,
+              textAlign: TextAlign.justify,
+              style: AppStyles.h5.copyWith(
+                fontWeight: FontWeight.w300,
+                fontSize: 16,
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  SizedBox buildHeader(BuildContext context, Event event) {
+    return SizedBox(
       height: 268,
       child: Stack(
         children: [
@@ -22,8 +171,8 @@ class EventDetail extends StatelessWidget {
             children: [
               SizedBox(
                 height: 240,
-                child: ImageHelper.loadAssetImage(
-                  "${assetImageLink}img_event.png",
+                child: ImageHelper.loadNetworkImage(
+                  event.thumbnail ?? "",
                   width: double.maxFinite,
                   fit: BoxFit.fill,
                 ),
@@ -73,98 +222,6 @@ class EventDetail extends StatelessWidget {
           )
         ],
       ),
-    );
-    var body = SingleChildScrollView(
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 74),
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 20),
-            const EventSubInformation(
-              title: "14 December, 2021",
-              subtitle: "Tuesday, 4:00PM - 9:00PM",
-              iconName: "ic_event.png",
-            ),
-            const SizedBox(height: 20),
-            const EventSubInformation(
-              title: "Gala Convention Center",
-              subtitle: "36 Guild Street London, UK ",
-              iconName: "ic_location.png",
-            ),
-            const SizedBox(height: 20),
-            const Organizer(
-                avatarImage: "ic_location.png",
-                organizerName: "Cartoon Network"),
-            const SizedBox(height: 20),
-            Text(
-              "About Event",
-              style: AppStyles.h5.copyWith(
-                fontWeight: FontWeight.w500,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-            Text(
-              aboutEvent,
-              style: AppStyles.h5.copyWith(
-                fontWeight: FontWeight.normal,
-                fontSize: 16,
-              ),
-            )
-          ],
-        ),
-      ),
-    );
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              automaticallyImplyLeading: false,
-              expandedHeight: 268,
-              flexibleSpace: FlexibleSpaceBar(
-                collapseMode: CollapseMode.pin,
-                stretchModes: const [StretchMode.blurBackground],
-                background: header,
-              ),
-            ),
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: buildHeaderSliver(),
-            ),
-            SliverToBoxAdapter(
-              child: body,
-            )
-          ],
-        ),
-      ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(.3),
-            // Shadow color with opacity
-            spreadRadius: 1,
-            // Spread the shadow
-            blurRadius: 16,
-            // Blur effect
-            offset: const Offset(0, 10),
-          ),
-          BoxShadow(
-            color: Colors.grey.withOpacity(.3),
-            // Shadow color with opacity
-            spreadRadius: 1,
-            // Spread the shadow
-            blurRadius: 24,
-            // Blur effect
-            offset: const Offset(0, -10),
-          ),
-        ]),
-        child: MainElevatedButton(
-            textButton: "BUY TICKET", iconName: "ic_button_next.png"),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }
@@ -238,6 +295,10 @@ Widget buildHeaderStickyWidget() {
 const double _maxHeaderExtent = 120.0;
 
 class buildHeaderSliver extends SliverPersistentHeaderDelegate {
+  final Event event;
+
+  buildHeaderSliver(this.event);
+
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
@@ -290,7 +351,7 @@ class buildHeaderSliver extends SliverPersistentHeaderDelegate {
         height: 120,
         child: Center(
           child: Text(
-            "International Band Music Concert",
+            event.name,
             maxLines: 2,
             style: AppStyles.h3,
             overflow: TextOverflow.ellipsis,
