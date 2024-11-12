@@ -73,6 +73,7 @@ class _EventUpComingPageState extends State<EventUpComingPage>
         // `post` has a type of `Post`.
         final event = snapshot.data();
         return EventStandardCard(
+          distance: "1.2km",
           title: event.name,
           date: DateFormat('EEE, MMM d - yyyy • h:mm a').format(event.date),
           imageLink: event.poster ?? "",

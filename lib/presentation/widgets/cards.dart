@@ -2,19 +2,21 @@ import 'package:ezbooking/core/config/app_colors.dart';
 import 'package:ezbooking/core/config/app_styles.dart';
 import 'package:ezbooking/core/config/constants.dart';
 import 'package:ezbooking/core/utils/image_helper.dart';
-import 'package:ezbooking/presentation/widgets/favorite.dart';
+import 'package:ezbooking/core/utils/utils.dart';
 import 'package:flutter/material.dart';
 
 class UpcomingCard extends StatelessWidget {
   UpcomingCard({
     super.key,
+    required this.id,
     required this.title,
     required this.date,
     required this.imageLink,
     required this.location,
+    required this.distance,
   });
 
-  String imageLink, date, title, location;
+  String id, imageLink, date, title, location, distance;
 
   @override
   Widget build(BuildContext context) {
@@ -63,14 +65,6 @@ class UpcomingCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Opacity(
-                    opacity: .95,
-                    child: buildFavoriteButton(),
-                  ),
-                ),
               ],
             ),
             const SizedBox(height: 8.0),
@@ -100,15 +94,30 @@ class UpcomingCard extends StatelessWidget {
                       tintColor: Colors.grey,
                     ),
                     const SizedBox(width: 4.0),
-                    Text(
-                      location,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppStyles.title2.copyWith(
+                    Expanded(
+                      child: Text(
+                        location,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppStyles.title2.copyWith(
                           color: Colors.grey,
                           fontSize: 13,
                           fontWeight: FontWeight.w400,
-                          fontStyle: FontStyle.italic),
+                          fontStyle: FontStyle.italic,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      distance,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppStyles.title2.copyWith(
+                        color: Colors.grey,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        fontStyle: FontStyle.italic,
+                      ),
                     )
                   ],
                 ),
@@ -200,10 +209,11 @@ class EventStandardCard extends StatelessWidget {
     required this.imageLink,
     required this.location,
     required this.onPressed,
+    required this.distance,
   });
 
   final VoidCallback onPressed;
-  String imageLink, date, title, location;
+  String imageLink, date, title, location, distance;
 
   @override
   Widget build(BuildContext context) {
@@ -270,6 +280,18 @@ class EventStandardCard extends StatelessWidget {
                                 fontStyle: FontStyle.italic,
                                 overflow: TextOverflow.ellipsis,
                               ),
+                            ),
+                          ),
+                          Text(
+                            distance,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppStyles.title2.copyWith(
+                              color: Colors.grey,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w400,
+                              fontStyle: FontStyle.italic,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],

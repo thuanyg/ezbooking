@@ -6,11 +6,17 @@ import 'package:ezbooking/presentation/screens/explore/bloc/upcoming_event_state
 class UpcomingEventBloc extends Bloc<UpcomingEventEvent, UpcomingEventState> {
   final FetchEventsUpcomingUseCase _fetchEventsUpcomingUseCase;
 
-  UpcomingEventBloc(this._fetchEventsUpcomingUseCase) : super(UpcomingEventInitial()) {
+  UpcomingEventBloc(this._fetchEventsUpcomingUseCase)
+      : super(UpcomingEventInitial()) {
     on<FetchUpcomingEvent>((event, emit) async {
       try {
         emit(UpcomingEventLoading());
-        final events = await _fetchEventsUpcomingUseCase(limit: event.limit);
+        final events = event.isFetchApproximately
+            ? await _fetchEventsUpcomingUseCase(limit: event.limit)
+            : await _fetchEventsUpcomingUseCase.getApproximately(
+                limit: event.limit,
+                curPosition: event.position!,
+              );
         emit(UpcomingEventLoaded(events));
       } on Exception catch (e) {
         emit(UpcomingEventError(e.toString()));

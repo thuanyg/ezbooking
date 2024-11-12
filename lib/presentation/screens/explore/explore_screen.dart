@@ -3,13 +3,17 @@ import 'package:ezbooking/core/config/app_colors.dart';
 import 'package:ezbooking/core/config/app_styles.dart';
 import 'package:ezbooking/core/config/constants.dart';
 import 'package:ezbooking/core/utils/image_helper.dart';
+import 'package:ezbooking/map_sample.dart';
 import 'package:ezbooking/presentation/pages/event/event_upcoming.dart';
+import 'package:ezbooking/presentation/pages/maps/bloc/get_location_bloc.dart';
+import 'package:ezbooking/presentation/pages/maps/bloc/location_state.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/filter_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/filter_event.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/latest_event_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/upcoming_event_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/upcoming_event_event.dart';
 import 'package:ezbooking/presentation/screens/explore/widgets/up_coming_event.dart';
+import 'package:ezbooking/presentation/search_location/address_finder_page.dart';
 import 'package:ezbooking/presentation/widgets/button.dart';
 import 'package:ezbooking/presentation/widgets/cards.dart';
 import 'package:ezbooking/presentation/widgets/category.dart';
@@ -30,15 +34,28 @@ class _ExploreScreenState extends State<ExploreScreen>
   late FilterBloc filterBloc;
   late final UpcomingEventBloc upcomingEventBloc;
   late final LatestEventBloc latestEventBloc;
+  late final GetLocationBloc locationBloc;
 
   @override
   void initState() {
     super.initState();
+    locationBloc = BlocProvider.of<GetLocationBloc>(context);
     upcomingEventBloc = BlocProvider.of<UpcomingEventBloc>(context);
     latestEventBloc = BlocProvider.of<LatestEventBloc>(context);
     filterBloc = BlocProvider.of<FilterBloc>(context);
     // Fetch Data Initial
-    upcomingEventBloc.add(FetchUpcomingEvent(limit: 10));
+    if (locationBloc.locationResult == null) {
+      upcomingEventBloc.add(FetchUpcomingEvent(
+        limit: 10,
+        isFetchApproximately: false,
+      ));
+    } else {
+      upcomingEventBloc.add(FetchUpcomingEvent(
+        limit: 10,
+        isFetchApproximately: true,
+        position: locationBloc.locationResult!.position,
+      ));
+    }
   }
 
   Future<DateTime?> showSelectDate(BuildContext context) async {
@@ -530,21 +547,51 @@ Widget buildHeaderStickyWidget(BuildContext context) {
             child: ImageHelper.loadAssetImage("${assetImageLink}ic_menu.png"),
           ),
         ),
-        const Column(
-          children: [
-            Text(
-              "Current Location",
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w300),
-            ),
-            Text("New Yourk, USA",
-                style: TextStyle(
+        Expanded(
+          child: InkWell(
+            onTap: () =>
+                Navigator.of(context).pushNamed(AddressFinderPage.routeName),
+            child: Column(
+              children: [
+                const Text(
+                  "Current Location",
+                  style: TextStyle(
                     color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w400)),
-          ],
+                    fontSize: 13,
+                    fontWeight: FontWeight.w300,
+                  ),
+                ),
+                BlocBuilder<GetLocationBloc, LocationState>(
+                  builder: (context, state) {
+                    if (state is LocationSuccess) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          state.address ?? "---",
+                          maxLines: 1,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      );
+                    }
+
+                    return const Text(
+                      "",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),

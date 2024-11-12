@@ -1,11 +1,15 @@
-import 'package:ezbooking/data/datasources/auth_datasource.dart';
-import 'package:ezbooking/data/repositories/auth/auth_repository_impl.dart';
-import 'package:ezbooking/domain/usecases/auth/auth_usecase.dart';
 import 'package:ezbooking/injection_container.dart';
+import 'package:ezbooking/presentation/pages/event/bloc/comment_bloc.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/event_detail_bloc.dart';
+import 'package:ezbooking/presentation/pages/event/bloc/favorite_bloc.dart';
+import 'package:ezbooking/presentation/pages/event/bloc/fetch_comment_bloc.dart';
+import 'package:ezbooking/presentation/pages/event/bloc/fetch_favorite_bloc.dart';
 import 'package:ezbooking/presentation/pages/login/bloc/login_bloc.dart';
+import 'package:ezbooking/presentation/pages/maps/bloc/get_location_bloc.dart';
 import 'package:ezbooking/presentation/pages/signup/bloc/signup_bloc.dart';
 import 'package:ezbooking/presentation/pages/splash/splash_page.dart';
+import 'package:ezbooking/presentation/pages/user_profile/bloc/update_user_bloc.dart';
+import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/filter_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/latest_event_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/upcoming_event_bloc.dart';
@@ -28,7 +32,14 @@ void main() async {
         BlocProvider(create: (_) => sl<LatestEventBloc>()),
         BlocProvider(create: (_) => sl<UpcomingEventBloc>()),
         BlocProvider(create: (_) => sl<EventDetailBloc>()),
+        BlocProvider(create: (_) => sl<UserInfoBloc>()),
+        BlocProvider(create: (_) => sl<UpdateUserBloc>()),
+        BlocProvider(create: (_) => sl<FavoriteBloc>()),
+        BlocProvider(create: (_) => sl<FetchFavoriteBloc>()),
         BlocProvider(create: (_) => FilterBloc()),
+        BlocProvider(create: (_) => sl<GetLocationBloc>()),
+        BlocProvider(create: (_) => sl<FetchCommentBloc>()),
+        BlocProvider(create: (_) => sl<CommentBloc>()),
       ],
       child: const MyApp(),
     ),
