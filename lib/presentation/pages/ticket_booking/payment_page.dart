@@ -32,7 +32,7 @@ class _PaymentPageState extends State<PaymentPage> {
     final order = ModalRoute.of(context)!.settings.arguments as Order;
 
     VnPayPaymentRequest paymentRequest = VnPayPaymentRequest(
-      vnpAmount: 10000 * 100,
+      vnpAmount: 100000.toString(),
       vnpCreateDate: VnPayPaymentRequest.formatDateTime(DateTime.now()),
       vnpOrderInfo: "Thanh toan don hang ${order.id}",
       vnpReturnUrl: "https://return-url.com",
@@ -41,10 +41,24 @@ class _PaymentPageState extends State<PaymentPage> {
       vnpTxnRef: DateTime.now().millisecondsSinceEpoch.toString(),
     );
 
-    String url =
-        "$vnpUrl?vnp_Amount=${paymentRequest.vnpAmount}&vnp_Command=pay&vnp_CreateDate=${paymentRequest.vnpCreateDate}&vnp_CurrCode=VND&vnp_IpAddr=127.0.0.1&vnp_Locale=vn&vnp_OrderInfo=Thanh+toan+don+hang&vnp_OrderType=other&vnp_ReturnUrl=https%3A%2F%2Fdomainmerchant.vn%2FReturnUrl&vnp_TmnCode=$vnpTmnCode&vnp_Version=2.1.0&vnp_SecureHash=12222222222&vnp_TxnRef=5";
+    // final paymentUrl = VNPAYFlutter.instance.generatePaymentUrl(
+    //   url: 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
+    //   version: '2.0.1',
+    //   tmnCode: vnpTmnCode,
+    //   txnRef: DateTime.now().millisecondsSinceEpoch.toString(),
+    //   orderInfo: 'Pay 30.000 VND',
+    //   amount: 30000,
+    //   vnpayOrderType: "other",
+    //   returnUrl: 'https://htthuan.id.vn/return',
+    //   ipAdress: '192.168.10.10',
+    //   vnpayHashKey: vnpHashSecret,
+    //   vnPayHashType: VNPayHashType.HMACSHA512,
+    //   vnpayExpireDate: DateTime.now().add(const Duration(minutes: 15, hours: 7)),
+    // );
 
 
+
+    String paymentUrl = VnPayPaymentRequest.generatePaymentUrl(paymentRequest);
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))
@@ -60,8 +74,7 @@ class _PaymentPageState extends State<PaymentPage> {
           },
         ),
       )
-      ..loadRequest(
-          Uri.parse(VnPayPaymentRequest.generatePaymentUrl(paymentRequest)));
+      ..loadRequest(Uri.parse(paymentUrl));
 
     return Scaffold(
       appBar: AppBar(

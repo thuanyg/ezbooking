@@ -47,16 +47,16 @@ class _SplashPageState extends State<SplashPage> {
 
     if (firstRun == null || firstRun != "No") {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.of(context).pushNamed(OnboardingPage.routeName);
+        Navigator.of(context).pushReplacementNamed(OnboardingPage.routeName);
       });
       return;
     } else {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         User? user = FirebaseAuth.instance.currentUser;
         if (user != null) {
-          Navigator.of(context).pushNamed(HomePage.routeName);
+          Navigator.of(context).pushReplacementNamed(HomePage.routeName);
         } else {
-          Navigator.of(context).pushNamed(LoginPage.routeName);
+          Navigator.of(context).pushReplacementNamed(LoginPage.routeName);
         }
       });
     }

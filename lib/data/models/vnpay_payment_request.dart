@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:crypto/crypto.dart';
 
 const vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
@@ -13,9 +12,8 @@ const String vnpOrderType = "other";
 const String vnpHashSecret = "ES0GDAPN8ANDCO99ZDNR76CBXQ3LQJ4E";
 
 class VnPayPaymentRequest {
-  final int vnpAmount;
+  final String vnpAmount;
   final String vnpCreateDate;
-
   final String vnpOrderInfo;
   final String vnpReturnUrl;
   final String vnpExpireDate;
@@ -30,72 +28,70 @@ class VnPayPaymentRequest {
     required this.vnpTxnRef,
   });
 
-
-
   static String formatDateTime(DateTime dateTime) {
     return '${dateTime.year.toString().padLeft(4, '0')}${dateTime.month.toString().padLeft(2, '0')}${dateTime.day.toString().padLeft(2, '0')}${dateTime.hour.toString().padLeft(2, '0')}${dateTime.minute.toString().padLeft(2, '0')}${dateTime.second.toString().padLeft(2, '0')}';
   }
 
   static String generatePaymentUrl(VnPayPaymentRequest paymentRequest) {
+    final amount =
+        (double.parse(paymentRequest.vnpAmount) * 100).round().toString();
+
     final Map<String, String> vnpParams = {
-      'vnp_Amount': (paymentRequest.vnpAmount).toString(),
-      'vnp_Command': 'pay',
+      'vnp_Amount': amount,
+      'vnp_Command': vnpCommand,
       'vnp_CreateDate': paymentRequest.vnpCreateDate,
       'vnp_CurrCode': 'VND',
-      'vnp_IpAddr': '127.0.0.1',
-      'vnp_Locale': 'vn',
+      'vnp_IpAddr': vnpIpAddr,
+      'vnp_Locale': vnpLocale,
       'vnp_OrderInfo': paymentRequest.vnpOrderInfo,
-      'vnp_OrderType': 'other',
+      'vnp_OrderType': vnpOrderType,
       'vnp_ReturnUrl': paymentRequest.vnpReturnUrl,
       'vnp_TmnCode': vnpTmnCode,
-      'vnp_TxnRef': DateTime.now().millisecondsSinceEpoch.toString(),
-      'vnp_Version': '2.1.0',
+      'vnp_TxnRef': paymentRequest.vnpTxnRef,
+      'vnp_Version': vnpVersion,
+      'vnp_BankCode': "",
     };
 
+    // Sắp xếp các tham số theo thứ tự a-z
     final List<String> fieldNames = vnpParams.keys.toList()..sort();
 
-    // Tạo chuỗi hash
+    // Tạo chuỗi hash data theo đúng format của VNPay
     final StringBuffer hashData = StringBuffer();
-    for (var field in fieldNames) {
-      if (vnpParams[field]!.isNotEmpty) {
-        hashData.write('$field=${vnpParams[field]}&');
+    for (var fieldName in fieldNames) {
+      if (vnpParams[fieldName]!.isNotEmpty) {
+        if (hashData.isNotEmpty) {
+          hashData.write('&');
+        }
+        hashData
+            .write('$fieldName=${Uri.encodeComponent(vnpParams[fieldName]!)}');
       }
-      print(field);
     }
 
-    String hashDataString = "";
+    // Tạo chuỗi ký tự cần ký
+    final String signData = hashData.toString();
+    print(hashData);
 
-    if (hashData.toString().endsWith('&')) {
-      hashDataString = hashData.toString().substring(0, hashData.toString().length - 1);
-    }
-    // secureHash += vnpHashSecret;
-
-    print("HashData: $hashDataString");
-
-    // Tạo HMAC-SHA512
-    final key = utf8.encode(vnpHashSecret);
-    final bytes = utf8.encode(hashDataString);
-    final hmacSha512 = Hmac(sha512, key);
-    final digest = hmacSha512.convert(bytes);
-    final vnpSecureHash = digest.toString();
+    // Tạo chữ ký HMAC-SHA512
+    final vnpSecureHash = Hmac(sha512, utf8.encode(vnpHashSecret))
+        .convert(utf8.encode(signData))
+        .toString();
 
     // Thêm secure hash vào params
     vnpParams['vnp_SecureHash'] = vnpSecureHash;
 
-    // Tạo URL với tất cả các tham số
+    // Tạo URL thanh toán
     final StringBuffer queryUrl = StringBuffer('$vnpUrl?');
     vnpParams.forEach((key, value) {
-      queryUrl.write('$key=${Uri.encodeComponent(value)}&');
+      if (value.isNotEmpty) {
+        if (!queryUrl.toString().endsWith('?')) {
+          queryUrl.write('&');
+        }
+        queryUrl.write('$key=${Uri.encodeComponent(value)}');
+      }
     });
 
-    // Xóa dấu & cuối cùng
-    String finalUrl = queryUrl.toString();
-    if (finalUrl.endsWith('&')) {
-      finalUrl = finalUrl.substring(0, finalUrl.length - 1);
-    }
+    print(queryUrl);
 
-    print(finalUrl);
-
-    return finalUrl;
+    return queryUrl.toString();
   }
 }

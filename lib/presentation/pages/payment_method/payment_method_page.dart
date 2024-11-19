@@ -31,8 +31,13 @@ class PaymentMethodPage extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 28),
             ListTile(
+              leading: ImageHelper.loadAssetImage(
+                "${assetImageLink}vnpay.png",
+                height: 28,
+                fit: BoxFit.cover,
+              ),
               title: const Text("ATM/Internet Banking"),
               trailing: Radio(
                 value: "i",
@@ -41,6 +46,11 @@ class PaymentMethodPage extends StatelessWidget {
               ),
             ),
             ListTile(
+              leading: ImageHelper.loadAssetImage(
+                "${assetImageLink}momo.png",
+                height: 28,
+                fit: BoxFit.fill,
+              ),
               title: const Text("Momo"),
               trailing: Radio(
                 value: "a",

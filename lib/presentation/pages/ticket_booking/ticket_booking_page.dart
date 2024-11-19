@@ -1,6 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart' as cf;
+import 'package:ezbooking/core/utils/dialogs.dart';
+import 'package:ezbooking/core/utils/utils.dart';
 import 'package:ezbooking/data/models/event.dart';
+import 'package:ezbooking/data/models/ticket.dart';
+import 'package:ezbooking/presentation/pages/ticket_booking/bloc/orders/create_order_bloc.dart';
+import 'package:ezbooking/presentation/pages/ticket_booking/bloc/orders/create_order_event.dart';
+import 'package:ezbooking/presentation/pages/ticket_booking/bloc/orders/create_order_state.dart';
+import 'package:ezbooking/presentation/pages/ticket_booking/bloc/tickets/create_ticket_bloc.dart';
+import 'package:ezbooking/presentation/pages/ticket_booking/bloc/tickets/create_ticket_event.dart';
+import 'package:ezbooking/presentation/pages/ticket_booking/bloc/tickets/create_ticket_state.dart';
 import 'package:ezbooking/presentation/pages/ticket_booking/payment_page.dart';
+import 'package:ezbooking/presentation/pages/ticket_booking/payment_success_page.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_bloc.dart';
 import 'package:ezbooking/data/models/order.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_state.dart';
@@ -24,11 +34,19 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   late UserInfoBloc userInfoBloc;
+  late CreateOrderBloc createOrderBloc;
+  late CreateTicketBloc createTicketBloc;
+
+  bool isOrderCreated = false;
+  Order? order;
+  List<Ticket> tickets = [];
 
   @override
   void initState() {
     super.initState();
     userInfoBloc = BlocProvider.of<UserInfoBloc>(context);
+    createOrderBloc = BlocProvider.of<CreateOrderBloc>(context);
+    createTicketBloc = BlocProvider.of<CreateTicketBloc>(context);
   }
 
   void _incrementTickets() {
@@ -204,30 +222,66 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                     ),
                     const SizedBox(height: 24),
                     MainElevatedButton(
-                        height: 50,
-                        width: double.infinity,
-                        textButton: "Continue",
-                        iconName: "ic_button_next.png",
-                        onTap: () {
-                          final order = Order(
-                            id: DateTime.now()
-                                .millisecondsSinceEpoch
-                                .toString(),
-                            eventID: event.id!,
-                            status: "pending",
-                            createdAt: cf.Timestamp.now(),
-                            ticketPrice: event.ticketPrice,
-                            ticketQuantity: int.parse(quantityController.text),
-                            userID: FirebaseAuth.instance.currentUser!.uid,
-                          );
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => PaymentPage(),
-                              settings: RouteSettings(arguments: order),
-                            ),
-                          );
-                        }),
+                      height: 50,
+                      width: double.infinity,
+                      textButton: "Continue",
+                      iconName: "ic_button_next.png",
+                      onTap: () {
+                        DialogUtils.showLoadingDialog(context);
+                        // Success payment
+                        order = Order(
+                          id: AppUtils.generateRandomString(6),
+                          eventID: event.id!,
+                          status: "success",
+                          createdAt: cf.Timestamp.now(),
+                          ticketPrice: event.ticketPrice,
+                          ticketQuantity: int.parse(quantityController.text),
+                          userID: FirebaseAuth.instance.currentUser!.uid,
+                          orderType: 'Online',
+                        );
+
+                        createOrderBloc.add(CreateOrder(order!));
+                        // Create ticket for user
+                        _createTicketsForOrder(order!);
+                        // Navigator.push(
+                        //   context,
+                        //   MaterialPageRoute(
+                        //     builder: (context) => PaymentPage(),
+                        //     settings: RouteSettings(arguments: order),
+                        //   ),
+                        // );
+                      },
+                    ),
+                    BlocListener(
+                      bloc: createOrderBloc,
+                      listener: (context, state) {
+                        if (state is CreateOrderSuccess) {
+                          isOrderCreated = true;
+                        }
+                      },
+                      child: BlocListener(
+                        bloc: createTicketBloc,
+                        listener: (context, state) {
+                          if (state is CreateTicketSuccess) {
+                            if (isOrderCreated) {
+                              print(isOrderCreated);
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => PaymentSuccessPage(
+                                    order: order!,
+                                    event: event,
+                                    tickets: tickets,
+                                  ),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        child: Container(),
+                      ),
+                    ),
                   ],
                 );
               }
@@ -277,5 +331,36 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
         ),
       ],
     );
+  }
+
+  // Tạo vé cho đơn hàng
+  void _createTicketsForOrder(Order order) {
+    try {
+      // Gọi add cho mỗi vé để gửi sự kiện vào bloc
+      for (int i = 0; i < order.ticketQuantity; i++) {
+        final ticketID = AppUtils.generateRandomString(8);
+        final qrCodeData =
+            'ticketId=$ticketID&orderId=${order.id}&eventId=${order.eventID}';
+        final encryptedData =
+            AppUtils.encryptData(qrCodeData, AppUtils.secretKey);
+
+        Ticket ticket = Ticket(
+          id: ticketID,
+          orderID: order.id,
+          eventID: order.eventID,
+          userID: order.userID,
+          ticketPrice: order.ticketPrice,
+          ticketType: "Standard",
+          status: "Available",
+          qrCodeData: encryptedData,
+          createdAt: DateTime.now().toUtc().add(const Duration(hours: 7)),
+        );
+        tickets.add(ticket);
+        // Gửi sự kiện tạo vé vào CreateTicketBloc
+        createTicketBloc.add(CreateTicket(ticket));
+      }
+    } catch (e) {
+      createTicketBloc.emitError(e.toString());
+    }
   }
 }

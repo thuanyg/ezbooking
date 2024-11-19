@@ -8,6 +8,7 @@ import 'package:ezbooking/presentation/pages/splash/splash_page.dart';
 import 'package:ezbooking/presentation/pages/resetpassword/reset_password.dart';
 import 'package:ezbooking/presentation/pages/signup/signup_page.dart';
 import 'package:ezbooking/presentation/pages/ticket_booking/choose_seat_page.dart';
+import 'package:ezbooking/presentation/pages/ticket_booking/payment_success_page.dart';
 import 'package:ezbooking/presentation/pages/ticket_booking/ticket_booking_page.dart';
 import 'package:ezbooking/presentation/pages/user_profile/my_profile_page.dart';
 import 'package:ezbooking/presentation/search_location/address_finder_page.dart';

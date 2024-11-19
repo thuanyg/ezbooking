@@ -8,11 +8,14 @@ import 'package:ezbooking/presentation/pages/login/bloc/login_bloc.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/get_location_bloc.dart';
 import 'package:ezbooking/presentation/pages/signup/bloc/signup_bloc.dart';
 import 'package:ezbooking/presentation/pages/splash/splash_page.dart';
+import 'package:ezbooking/presentation/pages/ticket_booking/bloc/orders/create_order_bloc.dart';
+import 'package:ezbooking/presentation/pages/ticket_booking/bloc/tickets/create_ticket_bloc.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/update_user_bloc.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/filter_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/latest_event_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/upcoming_event_bloc.dart';
+import 'package:ezbooking/presentation/screens/ticket/bloc/get_tickets_bloc.dart';
 import 'package:ezbooking/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -40,6 +43,9 @@ void main() async {
         BlocProvider(create: (_) => sl<GetLocationBloc>()),
         BlocProvider(create: (_) => sl<FetchCommentBloc>()),
         BlocProvider(create: (_) => sl<CommentBloc>()),
+        BlocProvider(create: (_) => sl<CreateOrderBloc>()),
+        BlocProvider(create: (_) => sl<CreateTicketBloc>()),
+        BlocProvider(create: (_) => sl<GetTicketsBloc>()),
       ],
       child: const MyApp(),
     ),

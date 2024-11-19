@@ -51,6 +51,7 @@ class _EventDetailState extends State<EventDetail>
   late CommentBloc commentBloc;
   late FetchCommentBloc fetchCommentBloc;
   late UserInfoBloc userInfoBloc;
+
   final mapService = GoogleMapService();
 
   final commentController = TextEditingController();

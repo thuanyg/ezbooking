@@ -6,13 +6,21 @@ import 'package:ezbooking/data/datasources/auth_datasource.dart';
 import 'package:ezbooking/data/datasources/events/event_datasource.dart';
 import 'package:ezbooking/data/datasources/events/event_datasource_impl.dart';
 import 'package:ezbooking/data/datasources/map_datasource.dart';
+import 'package:ezbooking/data/datasources/orders/order_datasource.dart';
+import 'package:ezbooking/data/datasources/orders/order_datasource_impl.dart';
+import 'package:ezbooking/data/datasources/tickets/ticket_datasource.dart';
+import 'package:ezbooking/data/datasources/tickets/ticket_datasource_impl.dart';
 import 'package:ezbooking/data/datasources/users/user_datasource.dart';
 import 'package:ezbooking/data/datasources/users/user_datasource_impl.dart';
 import 'package:ezbooking/data/repositories/auth/auth_repository_impl.dart';
 import 'package:ezbooking/data/repositories/event/event_repository_impl.dart';
+import 'package:ezbooking/data/repositories/orders/order_repository_impl.dart';
+import 'package:ezbooking/data/repositories/tickets/ticket_repository_impl.dart';
 import 'package:ezbooking/data/repositories/user/user_repository_impl.dart';
 import 'package:ezbooking/domain/repositories/auth_repository.dart';
 import 'package:ezbooking/domain/repositories/event_repository.dart';
+import 'package:ezbooking/domain/repositories/order_repository.dart';
+import 'package:ezbooking/domain/repositories/ticket_repository.dart';
 import 'package:ezbooking/domain/repositories/user_repository.dart';
 import 'package:ezbooking/domain/usecases/auth/auth_usecase.dart';
 import 'package:ezbooking/domain/usecases/events/favorite_event.dart';
@@ -21,6 +29,9 @@ import 'package:ezbooking/domain/usecases/events/fetch_event_detail.dart';
 import 'package:ezbooking/domain/usecases/events/fetch_events_latest.dart';
 import 'package:ezbooking/domain/usecases/events/fetch_events_upcoming.dart';
 import 'package:ezbooking/domain/usecases/maps/map_usecase.dart';
+import 'package:ezbooking/domain/usecases/orders/create_order.dart';
+import 'package:ezbooking/domain/usecases/ticket/create_ticket.dart';
+import 'package:ezbooking/domain/usecases/ticket/get_tickets.dart';
 import 'package:ezbooking/domain/usecases/user/comment_event.dart';
 import 'package:ezbooking/domain/usecases/user/fetch_user_info.dart';
 import 'package:ezbooking/domain/usecases/user/update_user_info.dart';
@@ -32,10 +43,13 @@ import 'package:ezbooking/presentation/pages/event/bloc/fetch_favorite_bloc.dart
 import 'package:ezbooking/presentation/pages/login/bloc/login_bloc.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/get_location_bloc.dart';
 import 'package:ezbooking/presentation/pages/signup/bloc/signup_bloc.dart';
+import 'package:ezbooking/presentation/pages/ticket_booking/bloc/orders/create_order_bloc.dart';
+import 'package:ezbooking/presentation/pages/ticket_booking/bloc/tickets/create_ticket_bloc.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/update_user_bloc.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/latest_event_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/upcoming_event_bloc.dart';
+import 'package:ezbooking/presentation/screens/ticket/bloc/get_tickets_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_it/get_it.dart';
 
@@ -181,5 +195,47 @@ void initServiceLocator() {
 
   sl.registerLazySingleton<FetchCommentBloc>(
     () => FetchCommentBloc(sl<FetchCommentsUseCase>()),
+  );
+
+  // Order
+  sl.registerLazySingleton<OrderDatasource>(
+    () => OrderDatasourceImpl(),
+  );
+
+  sl.registerLazySingleton<OrderRepository>(
+    () => OrderRepositoryImpl(sl<OrderDatasource>()),
+  );
+
+  sl.registerLazySingleton<CreateOrderUseCase>(
+    () => CreateOrderUseCase(sl<OrderRepository>()),
+  );
+
+  sl.registerLazySingleton<CreateOrderBloc>(
+    () => CreateOrderBloc(sl<CreateOrderUseCase>()),
+  );
+
+  // Ticket
+  sl.registerLazySingleton<TicketDatasource>(
+    () => TicketDatasourceImpl(),
+  );
+
+  sl.registerLazySingleton<TicketRepository>(
+    () => TicketRepositoryImpl(sl<TicketDatasource>()),
+  );
+
+  sl.registerLazySingleton<CreateTicketUseCase>(
+    () => CreateTicketUseCase(sl<TicketRepository>()),
+  );
+
+  sl.registerLazySingleton<CreateTicketBloc>(
+    () => CreateTicketBloc(sl<CreateTicketUseCase>()),
+  );
+
+  sl.registerLazySingleton<GetTicketsUseCase>(
+    () => GetTicketsUseCase(sl<TicketRepository>()),
+  );
+
+  sl.registerLazySingleton<GetTicketsBloc>(
+    () => GetTicketsBloc(sl<GetTicketsUseCase>()),
   );
 }

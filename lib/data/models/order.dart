@@ -1,82 +1,69 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Order {
-  final String id;
-  final String userID;
-  final String eventID;
-  final int ticketQuantity;
-  final double ticketPrice;
-  final Timestamp createdAt;
-  final String status;
+  final String id; // ID đơn hàng
+  final String userID; // ID người mua
+  final String eventID; // ID sự kiện liên quan
+  final int ticketQuantity; // Số lượng vé
+  final double ticketPrice; // Tổng giá vé
+  final String? paymentID; // ID giao dịch thanh toán
+  final String? paymentMethod; // ID giao dịch thanh toán
+  final String orderType; // Loại đơn hàng (Online, AtEvent)
+  final Timestamp createdAt; // Thời gian tạo đơn hàng
+  final Timestamp? updatedAt; // Thời gian cập nhật đơn hàng
+  final String
+      status; // Trạng thái đơn hàng (Pending, Paid, Cancelled, Completed)
+  final double? discount; // Số tiền giảm giá hoặc khuyến mãi
 
-  // Constructor
   Order({
     required this.id,
     required this.userID,
     required this.eventID,
     required this.ticketQuantity,
     required this.ticketPrice,
+    this.paymentID,
+    this.paymentMethod,
+    required this.orderType,
     required this.createdAt,
+    this.updatedAt,
     required this.status,
+    this.discount,
   });
 
-  // Create from JSON/Firestore
-  factory Order.fromJson(Map<String, dynamic> json) {
+  // Chuyển từ Firestore Document Snapshot sang Order object
+  factory Order.fromFirestore(Map<String, dynamic> data, String documentId) {
     return Order(
-      id: json['id'] as String,
-      userID: json['userID'] as String,
-      eventID: json['eventID'] as String,
-      ticketQuantity: json['ticketQuantity'] as int,
-      ticketPrice: (json['ticketPrice'] as num).toDouble(),
-      createdAt: json['createdAt'] as Timestamp,
-      status: json['status'] as String,
+      id: documentId,
+      userID: data['userID'] ?? '',
+      eventID: data['eventID'] ?? '',
+      ticketQuantity: data['ticketQuantity'] ?? 0,
+      ticketPrice: (data['ticketPrice'] ?? 0).toDouble(),
+      paymentID: data['paymentID'],
+      paymentMethod: data['paymentMethod'],
+      orderType: data['orderType'] ?? 'Online',
+      createdAt: data['createdAt'],
+      updatedAt: data['updatedAt'],
+      status: data['status'] ?? 'Pending',
+      discount: data['discount'] != null
+          ? (data['discount'] as num).toDouble()
+          : null,
     );
   }
 
-  // Convert to JSON/Firestore
-  Map<String, dynamic> toJson() {
+  // Chuyển từ Order object sang Map để lưu vào Firestore
+  Map<String, dynamic> toFirestore() {
     return {
-      'id': id,
       'userID': userID,
       'eventID': eventID,
       'ticketQuantity': ticketQuantity,
       'ticketPrice': ticketPrice,
+      'paymentID': paymentID,
+      'orderType': orderType,
       'createdAt': createdAt,
+      'paymentMethod': paymentMethod,
+      'updatedAt': updatedAt,
       'status': status,
+      'discount': discount,
     };
-  }
-
-  // Calculate total price
-  double get totalPrice => ticketQuantity * ticketPrice;
-
-  // Get DateTime from Timestamp
-  DateTime get createdAtDateTime => createdAt.toDate();
-
-  // Copy with method for immutability
-  Order copyWith({
-    String? id,
-    String? userID,
-    String? eventID,
-    int? ticketQuantity,
-    double? ticketPrice,
-    Timestamp? createdAt,
-    String? status,
-  }) {
-    return Order(
-      id: id ?? this.id,
-      userID: userID ?? this.userID,
-      eventID: eventID ?? this.eventID,
-      ticketQuantity: ticketQuantity ?? this.ticketQuantity,
-      ticketPrice: ticketPrice ?? this.ticketPrice,
-      createdAt: createdAt ?? this.createdAt,
-      status: status ?? this.status,
-    );
-  }
-
-  @override
-  String toString() {
-    return 'TicketBooking(id: $id, userID: $userID, eventID: $eventID, '
-        'ticketQuantity: $ticketQuantity, ticketPrice: $ticketPrice, '
-        'createdAt: ${createdAt.toDate()}, status: $status)';
   }
 }

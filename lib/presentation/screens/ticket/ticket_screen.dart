@@ -1,11 +1,33 @@
 import 'package:ezbooking/core/config/app_colors.dart';
+import 'package:ezbooking/data/models/ticket.dart';
+import 'package:ezbooking/presentation/pages/ticket_booking/view_ticket_page.dart';
+import 'package:ezbooking/presentation/screens/ticket/bloc/get_tickets_bloc.dart';
+import 'package:ezbooking/presentation/screens/ticket/bloc/get_tickets_event.dart';
+import 'package:ezbooking/presentation/screens/ticket/bloc/get_tickets_state.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 
-class TicketScreen extends StatelessWidget {
+class TicketScreen extends StatefulWidget {
   TicketScreen({super.key});
 
   static String routeName = "TicketScreen";
+
+  @override
+  State<TicketScreen> createState() => _TicketScreenState();
+}
+
+class _TicketScreenState extends State<TicketScreen> {
+  late GetTicketsBloc getTicketsBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    getTicketsBloc = BlocProvider.of<GetTicketsBloc>(context);
+    final user = FirebaseAuth.instance.currentUser;
+    getTicketsBloc.add(GetTicketsOfUser(user!.uid));
+  }
 
   final List<Map<String, dynamic>> tickets = [
     {
@@ -53,7 +75,20 @@ class TicketScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: Colors.grey[100],
         appBar: _buildAppBar(),
-        body: _buildBody(),
+        body: BlocBuilder(
+          bloc: getTicketsBloc,
+          builder: (context, state) {
+            if (state is GetTicketsLoading) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+            if (state is GetTicketsSuccess) {
+              return _buildBody(state.tickets);
+            }
+            return const SizedBox.shrink();
+          },
+        ),
       ),
     );
   }
@@ -86,26 +121,26 @@ class TicketScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(List<Ticket> tickets) {
+    final ticketsUpcoming =
+        tickets.where((t) => t.status == "Available").toList();
     return TabBarView(
       children: [
-        _buildTicketList('upcoming'),
-        _buildTicketList('completed'),
-        _buildTicketList('cancelled'),
+        _buildTicketList('upcoming', ticketsUpcoming),
+        _buildTicketList('completed', ticketsUpcoming),
+        _buildTicketList('cancelled', ticketsUpcoming),
       ],
     );
   }
 
-  Widget _buildTicketList(String status) {
-    final filteredTickets =
-        tickets.where((ticket) => ticket['status'] == status).toList();
-
+  Widget _buildTicketList(String status, List<Ticket> filteredTickets) {
+    print(filteredTickets.length);
     if (filteredTickets.isEmpty) {
       return _buildEmptyState(status);
     }
 
     return ListView.builder(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       itemCount: filteredTickets.length,
       itemBuilder: (context, index) {
         return _buildTicketCard(filteredTickets[index]);
@@ -158,190 +193,201 @@ class TicketScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTicketCard(Map<String, dynamic> ticket) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+  Widget _buildTicketCard(Ticket ticket) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ViewTicketPage(
+              ticket: ticket,
+            ),
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Event Image and Basic Info
-          Container(
-            height: 140,
-            decoration: BoxDecoration(
-              color: AppColors.primaryColor,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(20)),
-              image: DecorationImage(
-                image: NetworkImage(ticket['eventImage']),
-                fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(
-                  Colors.black.withOpacity(0.3),
-                  BlendMode.darken,
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            // Event Image and Basic Info
+            Container(
+              height: 140,
+              decoration: BoxDecoration(
+                color: AppColors.primaryColor,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(20)),
+                image: DecorationImage(
+                  image: NetworkImage(ticket.id),
+                  fit: BoxFit.cover,
+                  colorFilter: ColorFilter.mode(
+                    Colors.black.withOpacity(0.3),
+                    BlendMode.darken,
+                  ),
                 ),
               ),
-            ),
-            child: Stack(
-              children: [
-                Positioned(
-                  left: 20,
-                  bottom: 20,
-                  right: 20,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        ticket['eventTitle'],
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(Icons.location_on,
-                              color: Colors.white70, size: 16),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              ticket['location'],
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 14,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
+              child: const Stack(
+                children: [
+                  Positioned(
+                    left: 20,
+                    bottom: 20,
+                    right: 20,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "ticket['eventTitle']",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Dotted Line
-          Container(
-            margin: EdgeInsets.symmetric(horizontal: 20),
-            height: 1,
-            child: CustomPaint(
-              painter: DottedLinePainter(),
-              size: Size.infinite,
-            ),
-          ),
-          // Ticket Details
-          Padding(
-            padding: EdgeInsets.all(20),
-            child: Column(
-              children: [
-                _buildTicketDetail(
-                    'Date & Time',
-                    DateFormat('MMM dd, yyyy - hh:mm a')
-                        .format(ticket['date'])),
-                SizedBox(height: 16),
-                _buildTicketDetail('Ticket Type',
-                    '${ticket['ticketType']} (${ticket['seats'].join(', ')})'),
-                SizedBox(height: 16),
-                _buildTicketDetail('Ticket ID', ticket['ticketId']),
-                SizedBox(height: 20),
-                // QR Code
-                Container(
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 100,
-                        height: 100,
-                        color: Colors.white,
-                        child: Icon(Icons.qr_code_2_rounded,
-                            size: 80, color: Colors.grey[400]),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        ),
+                        SizedBox(height: 8),
+                        Row(
                           children: [
-                            const Text(
-                              'Show this QR code at the venue',
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Scan for quick entry',
-                              style: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14,
+                            Icon(Icons.location_on,
+                                color: Colors.white70, size: 16),
+                            SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                "ticket['location']",
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 14,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
                         ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Dotted Line
+            Container(
+              margin: EdgeInsets.symmetric(horizontal: 20),
+              height: 1,
+              child: CustomPaint(
+                painter: DottedLinePainter(),
+                size: Size.infinite,
+              ),
+            ),
+            // Ticket Details
+            Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  _buildTicketDetail(
+                      'Date & Time',
+                      DateFormat('MMM dd, yyyy - hh:mm a')
+                          .format(ticket.createdAt)),
+                  SizedBox(height: 16),
+                  _buildTicketDetail('Ticket Type', ticket.ticketType),
+                  SizedBox(height: 16),
+                  _buildTicketDetail('Ticket ID', ticket.id),
+                  SizedBox(height: 20),
+                  // QR Code
+                  Container(
+                    padding: EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 100,
+                          height: 100,
+                          color: Colors.white,
+                          child: Icon(Icons.qr_code_2_rounded,
+                              size: 80, color: Colors.grey[400]),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Show this QR code at the venue',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Scan for quick entry',
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  // Action Buttons
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {},
+                          icon: Icon(Icons.share_outlined),
+                          label: Text('Share'),
+                          style: OutlinedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            side: BorderSide(color: Colors.grey[300]!),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {},
+                          icon: const Icon(
+                            Icons.download_outlined,
+                            color: Colors.white,
+                          ),
+                          label: const Text(
+                            'Download',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryColor,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                ),
-                SizedBox(height: 20),
-                // Action Buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {},
-                        icon: Icon(Icons.share_outlined),
-                        label: Text('Share'),
-                        style: OutlinedButton.styleFrom(
-                          padding: EdgeInsets.symmetric(vertical: 12),
-                          side: BorderSide(color: Colors.grey[300]!),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(
-                          Icons.download_outlined,
-                          color: Colors.white,
-                        ),
-                        label: const Text(
-                          'Download',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryColor,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
