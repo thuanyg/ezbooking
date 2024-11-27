@@ -8,10 +8,19 @@ import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
+import 'package:permission_handler/permission_handler.dart';
 
 enum ValidateType { email, password, name, phone }
 
 class AppUtils {
+
+  Future<void> requestStoragePermissions() async {
+    if (await Permission.storage.request().isGranted) {
+      print('Storage permission granted');
+    } else {
+      print('Storage permission denied');
+    }
+  }
 
   static String formatDate(DateTime dateTime){
     return DateFormat("dd/MM/yyyy").format(dateTime);

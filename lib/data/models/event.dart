@@ -16,6 +16,7 @@ class Event {
   String? additionalInfo;
   Organizer? organizer;
   GeoPoint? geoPoint;
+  bool isDelete;
 
   Event({
     this.id,
@@ -33,10 +34,11 @@ class Event {
     this.additionalInfo,
     this.organizer,
     this.geoPoint,
+    required this.isDelete,
   });
 
   // Factory constructor for creating Event from a map (e.g., from Firestore)
-  factory Event.fromJson(Map<String, dynamic> map, {String? id}) {
+  factory Event.fromJson(Map<String, dynamic> map, {Organizer? organizer}) {
     return Event(
       id: map['id'],
       name: map['name'] ?? '',
@@ -46,14 +48,14 @@ class Event {
       poster: map['poster'] ?? '',
       description: map['description'] ?? '',
       date: (map['date'] as Timestamp).toDate(),
-      // Convert Firestore Timestamp to DateTime
       ticketPrice: map['ticketPrice']?.toDouble() ?? 0.0,
       availableTickets: map['availableTickets'] ?? 0,
       imageUrls: List<String>.from(map['imageUrls'] ?? []),
       videoUrl: map['videoUrl'],
       additionalInfo: map['additionalInfo'],
-      organizer: Organizer.fromJson(map['organizer']),
       geoPoint: map['geopoint'] as GeoPoint?,
+      isDelete: map['isDelete'] as bool,
+      organizer: organizer,
     );
   }
 
@@ -74,8 +76,9 @@ class Event {
       'thumbnail': thumbnail,
       'poster': poster,
       'additionalInfo': additionalInfo,
-      'organizer': organizer?.toJson(),
+      'organizer': organizer?.id,
       'geopoint': geoPoint,
+      'isDelete': isDelete,
     };
   }
 }

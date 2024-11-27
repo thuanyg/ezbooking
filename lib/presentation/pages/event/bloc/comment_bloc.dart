@@ -21,4 +21,8 @@ class CommentBloc extends Bloc<CommentEvent, CommentState> {
       },
     );
   }
+
+  reset(){
+    emit(CommentInitial());
+  }
 }

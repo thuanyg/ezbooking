@@ -6,6 +6,7 @@ import 'package:ezbooking/core/utils/utils.dart';
 import 'package:ezbooking/data/datasources/events/event_datasource.dart';
 import 'package:ezbooking/data/models/comment.dart';
 import 'package:ezbooking/data/models/event.dart';
+import 'package:ezbooking/data/models/organizer.dart';
 import 'package:geolocator/geolocator.dart';
 
 class EventDatasourceImpl extends EventDatasource {
@@ -56,11 +57,25 @@ class EventDatasourceImpl extends EventDatasource {
 
       final QuerySnapshot querySnapshot = await query.get();
 
-      final List<Event> events = querySnapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        return Event.fromJson(data);
-      }).toList();
+      // Fetch organizer data for each event
+      final List<Event> events = await Future.wait(
+        querySnapshot.docs.map((doc) async {
+          final data = doc.data() as Map<String, dynamic>;
+          final organizerId = data["organizer"] as String;
 
+          // Fetch organizer details
+          final organizerDoc = await FirebaseFirestore.instance
+              .collection("organizers")
+              .doc(organizerId)
+              .get();
+
+          final organizerData = organizerDoc.data()!;
+          final organizer = Organizer.fromJson(organizerData);
+
+          // Return Event with Organizer details
+          return Event.fromJson(data, organizer: organizer);
+        }),
+      );
       // Sắp xếp danh sách sự kiện theo khoảng cách từ vị trí hiện tại
       events.sort((a, b) {
         double distanceA = Geolocator.distanceBetween(
@@ -92,11 +107,25 @@ class EventDatasourceImpl extends EventDatasource {
 
       final QuerySnapshot querySnapshot = await query.get();
 
-      final List<Event> events = querySnapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        return Event.fromJson(data);
-      }).toList();
+      // Fetch organizer data for each event
+      final List<Event> events = await Future.wait(
+        querySnapshot.docs.map((doc) async {
+          final data = doc.data() as Map<String, dynamic>;
+          final organizerId = data["organizer"] as String;
 
+          // Fetch organizer details
+          final organizerDoc = await FirebaseFirestore.instance
+              .collection("organizers")
+              .doc(organizerId)
+              .get();
+
+          final organizerData = organizerDoc.data()!;
+          final organizer = Organizer.fromJson(organizerData);
+
+          // Return Event with Organizer details
+          return Event.fromJson(data, organizer: organizer);
+        }),
+      );
       return events;
     } catch (e) {
       throw Exception('Failed to fetch events: $e');
@@ -110,15 +139,30 @@ class EventDatasourceImpl extends EventDatasource {
 
       Query query = _eventsCollection
           .where("date", isGreaterThan: now)
-          .orderBy("date", descending: true)
+          .orderBy("date", descending: false)
           .limit(limit);
 
       final QuerySnapshot querySnapshot = await query.get();
 
-      final List<Event> events = querySnapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        return Event.fromJson(data);
-      }).toList();
+      // Fetch organizer data for each event
+      final List<Event> events = await Future.wait(
+        querySnapshot.docs.map((doc) async {
+          final data = doc.data() as Map<String, dynamic>;
+          final organizerId = data["organizer"] as String;
+
+          // Fetch organizer details
+          final organizerDoc = await FirebaseFirestore.instance
+              .collection("organizers")
+              .doc(organizerId)
+              .get();
+
+          final organizerData = organizerDoc.data() as Map<String, dynamic>;
+          final organizer = Organizer.fromJson(organizerData);
+
+          // Return Event with Organizer details
+          return Event.fromJson(data, organizer: organizer);
+        }),
+      );
 
       return events;
     } catch (e) {
@@ -129,7 +173,16 @@ class EventDatasourceImpl extends EventDatasource {
   @override
   Future<Event> fetchEvent({required String eventID}) async {
     final doc = await _firestoreService.getDocument("events", eventID);
-    return Event.fromJson(doc.data() as Map<String, dynamic>);
+    final data = doc.data() as Map<String, dynamic>;
+    // Get Organizer
+    final organizerId = data["organizer"] as String;
+    final organizerDoc = await FirebaseFirestore.instance
+        .collection("organizers")
+        .doc(organizerId)
+        .get();
+    final organizerData = organizerDoc.data() as Map<String, dynamic>;
+
+    return Event.fromJson(data, organizer: Organizer.fromJson(organizerData));
   }
 
   @override
@@ -229,10 +282,25 @@ class EventDatasourceImpl extends EventDatasource {
 
       final QuerySnapshot querySnapshot = await query.get();
 
-      final List<Event> events = querySnapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        return Event.fromJson(data);
-      }).toList();
+      // Fetch organizer data for each event
+      final List<Event> events = await Future.wait(
+        querySnapshot.docs.map((doc) async {
+          final data = doc.data() as Map<String, dynamic>;
+          final organizerId = data["organizer"] as String;
+
+          // Fetch organizer details
+          final organizerDoc = await FirebaseFirestore.instance
+              .collection("organizers")
+              .doc(organizerId)
+              .get();
+
+          final organizerData = organizerDoc.data()!;
+          final organizer = Organizer.fromJson(organizerData);
+
+          // Return Event with Organizer details
+          return Event.fromJson(data, organizer: organizer);
+        }),
+      );
 
       events.sort((a, b) {
         double distanceA = Geolocator.distanceBetween(
@@ -271,7 +339,9 @@ class EventDatasourceImpl extends EventDatasource {
         return Comment.fromJson(data, userData);
       }).toList());
 
-      comments.sort((a, b) => b.createdAt.compareTo(a.createdAt),);
+      comments.sort(
+        (a, b) => b.createdAt.compareTo(a.createdAt),
+      );
 
       return comments;
     } on Exception catch (e) {

@@ -42,8 +42,15 @@ dependencies:
   url_launcher: ^6.3.1
   encrypt: ^5.0.3
   qr_flutter: ^4.1.0
-#  vnpay_flutter: ^1.0.3
+  screenshot: ^3.0.0
+  path_provider: ^2.1.5
+  external_path: ^2.0.1
+  permission_handler: ^11.3.1
+  share_plus: ^10.1.2
 
+#  vnpay_flutter: ^1.0.3
+dependency_overrides:
+  http: ^0.13.6
 dev_dependencies:
   flutter_test:
     sdk: flutter

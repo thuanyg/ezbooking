@@ -1,39 +1,40 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Organizer {
-  String? name, email, address, phoneNumber, facebook, youtube, website;
+  String? id;
+  String? name;
+  String? email;
+  String? address;
+  String? phoneNumber;
+  String? facebook;
+  String? website;
+  String? avatarUrl;
+  Timestamp? createdAt;
 
   Organizer({
+    this.id,
     this.name,
     this.email,
     this.address,
     this.phoneNumber,
     this.facebook,
     this.website,
-    this.youtube,
+    this.avatarUrl,
+    this.createdAt,
   });
 
-  // From JSON
-  factory Organizer.fromJson(Map<String, dynamic>? json) {
+  factory Organizer.fromJson(Map<String, dynamic> json) {
     return Organizer(
-      name: json?['name'] as String?,
-      email: json?['email'] as String?,
-      address: json?['address'] as String?,
-      phoneNumber: json?['phoneNumber'] as String?,
-      facebook: json?['facebook'] as String?,
-      youtube: json?['youtube'] as String?,
-      website: json?['website'] as String?,
+      id: json['id'] as String?,
+      name: json['name'] as String?,
+      email: json['email'] as String?,
+      address: json['address'] as String?,
+      phoneNumber: json['phoneNumber'] as String?,
+      facebook: json['facebook'] as String?,
+      website: json['website'] as String?,
+      avatarUrl: json['avatarUrl'] as String?,
+      createdAt: json['createdAt'] as Timestamp?,
     );
   }
 
-  // To JSON
-  Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'email': email,
-      'address': address,
-      'phoneNumber': phoneNumber,
-      'facebook': facebook,
-      'youtube': youtube,
-      'website': website,
-    };
-  }
 }

@@ -20,4 +20,8 @@ class EventDetailBloc extends Bloc<EventDetailEvent, EventDetailState> {
       },
     );
   }
+
+  void reset() {
+    emit(EventDetailInitial());
+  }
 }

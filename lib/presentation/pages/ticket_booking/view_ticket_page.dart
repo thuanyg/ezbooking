@@ -134,8 +134,7 @@ class _ViewTicketPageState extends State<ViewTicketPage> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: QrImageView(
-        data:
-            AppUtils.decryptData(widget.ticket.qrCodeData, AppUtils.secretKey),
+        data: widget.ticket.qrCodeData,
         version: QrVersions.auto,
         size: 250,
         gapless: false,

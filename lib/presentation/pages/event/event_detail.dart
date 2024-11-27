@@ -43,8 +43,7 @@ class EventDetail extends StatefulWidget {
   State<EventDetail> createState() => _EventDetailState();
 }
 
-class _EventDetailState extends State<EventDetail>
-    with AutomaticKeepAliveClientMixin {
+class _EventDetailState extends State<EventDetail> {
   late ScrollController scrollController;
   late EventDetailBloc eventDetailBloc;
   late FavoriteBloc favoriteBloc;
@@ -80,12 +79,14 @@ class _EventDetailState extends State<EventDetail>
   @override
   void dispose() {
     favoriteBloc.add(ResetFavoriteEvent());
+    eventDetailBloc.reset();
+    commentBloc.reset();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
+    print("BUILD");
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -201,9 +202,10 @@ class _EventDetailState extends State<EventDetail>
                     },
                   ),
                   const SizedBox(height: 20),
-                  const Organizer(
-                      avatarImage: "ic_location.png",
-                      organizerName: "Cartoon Network"),
+                  Organizer(
+                    avatarImage: "ic_location.png",
+                    organizerName: event.organizer!.name!,
+                  ),
                   const SizedBox(height: 20),
                   Align(
                     alignment: Alignment.centerLeft,
@@ -338,12 +340,14 @@ class _EventDetailState extends State<EventDetail>
                       IconButton(
                         onPressed: () {},
                         icon: ImageHelper.loadAssetImage(
-                            "assets/images/ic_youtube.png"),
+                          "assets/images/ic_youtube.png",
+                        ),
                       ),
                       IconButton(
                         onPressed: () {},
                         icon: ImageHelper.loadAssetImage(
-                            "assets/images/ic_linkedin.png"),
+                          "assets/images/ic_linkedin.png",
+                        ),
                       ),
                     ],
                   )
@@ -638,47 +642,7 @@ class _EventDetailState extends State<EventDetail>
               ),
             ),
             if (comment.userID == currentUser!.uid)
-              PopupMenuButton(
-                color: Colors.white,
-                icon: const Icon(
-                  Icons.more_horiz,
-                  size: 18,
-                  color: Colors.black54,
-                ),
-                onSelected: (value) {},
-                itemBuilder: (_) => const <PopupMenuItem<String>>[
-                  PopupMenuItem<String>(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Text("Edit"),
-                        Expanded(
-                          child: Icon(
-                            Icons.edit,
-                            size: 18,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'delete',
-                    child: Row(
-                      children: [
-                        Text("Delete"),
-                        Expanded(
-                          child: Icon(
-                            Icons.delete,
-                            size: 18,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              )
+              const PopupMenuComment()
             else
               const SizedBox.shrink(),
           ],
@@ -789,9 +753,68 @@ class _EventDetailState extends State<EventDetail>
       ),
     );
   }
+}
+
+class PopupMenuComment extends StatefulWidget {
+  const PopupMenuComment({
+    super.key,
+  });
 
   @override
-  bool get wantKeepAlive => true;
+  State<PopupMenuComment> createState() => _PopupMenuCommentState();
+}
+
+class _PopupMenuCommentState extends State<PopupMenuComment> {
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<String>(
+      color: Colors.white,
+      icon: const Icon(
+        Icons.more_horiz,
+        size: 18,
+        color: Colors.black54,
+      ),
+      onSelected: (value) {
+        if (value == 'edit') {
+          // Perform editing action without setState
+        } else if (value == 'delete') {
+          // Perform delete action without affecting the state
+        }
+      },
+      itemBuilder: (context) => const [
+        PopupMenuItem<String>(
+          value: 'edit',
+          child: Row(
+            children: [
+              Text("Edit"),
+              Expanded(
+                child: Icon(
+                  Icons.edit,
+                  size: 18,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'delete',
+          child: Row(
+            children: [
+              Text("Delete"),
+              Expanded(
+                child: Icon(
+                  Icons.delete,
+                  size: 18,
+                  color: Colors.black87,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 Widget buildHeaderStickyWidget() {
