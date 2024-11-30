@@ -1,16 +1,10 @@
 import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:ezbooking/core/config/app_colors.dart';
 import 'package:ezbooking/core/utils/dialogs.dart';
-import 'package:ezbooking/core/utils/image_helper.dart';
-import 'package:ezbooking/core/utils/utils.dart';
 import 'package:ezbooking/data/models/event.dart';
 import 'package:ezbooking/data/models/ticket.dart';
-import 'package:ezbooking/presentation/pages/event/bloc/event_detail_bloc.dart';
-import 'package:ezbooking/presentation/pages/event/bloc/event_detail_event.dart';
-import 'package:ezbooking/presentation/pages/event/bloc/event_detail_state.dart';
+import 'package:ezbooking/domain/entities/ticket_entity.dart';
 import 'package:ezbooking/presentation/pages/ticket_booking/view_ticket_page.dart';
 import 'package:ezbooking/presentation/screens/ticket/bloc/get_tickets_bloc.dart';
 import 'package:ezbooking/presentation/screens/ticket/bloc/get_tickets_event.dart';
@@ -20,17 +14,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:external_path/external_path.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 
 class TicketScreen extends StatefulWidget {
-  TicketScreen({super.key});
+  const TicketScreen({super.key});
 
-  static String routeName = "TicketScreen";
+  static const String routeName = "TicketScreen";
 
   @override
   State<TicketScreen> createState() => _TicketScreenState();
@@ -38,19 +32,13 @@ class TicketScreen extends StatefulWidget {
 
 class _TicketScreenState extends State<TicketScreen> {
   late GetTicketsBloc getTicketsBloc;
-  late EventDetailBloc eventDetailBloc;
-  Uint8List? _imageFile;
-
-  //Create an instance of ScreenshotController
-  ScreenshotController screenshotController = ScreenshotController();
 
   @override
   void initState() {
     super.initState();
     getTicketsBloc = BlocProvider.of<GetTicketsBloc>(context);
-    eventDetailBloc = BlocProvider.of<EventDetailBloc>(context);
     final user = FirebaseAuth.instance.currentUser;
-    getTicketsBloc.add(GetTicketsOfUser(user!.uid));
+    getTicketsBloc.add(GetTicketEntitiesOfUser(user!.uid));
   }
 
   @override
@@ -64,12 +52,16 @@ class _TicketScreenState extends State<TicketScreen> {
           bloc: getTicketsBloc,
           builder: (context, state) {
             if (state is GetTicketsLoading) {
-              return const Center(
-                child: CircularProgressIndicator(),
+              return Center(
+                child: Lottie.asset(
+                  "assets/animations/loading.json",
+                  height: 80,
+                ),
               );
             }
-            if (state is GetTicketsSuccess) {
-              return _buildBody(state.tickets);
+            if (state is GetTicketEntitiesSuccess) {
+              print("---------------------------");
+              return _buildBody(state.ticketEntities);
             }
             return const SizedBox.shrink();
           },
@@ -106,25 +98,53 @@ class _TicketScreenState extends State<TicketScreen> {
     );
   }
 
-  Widget _buildBody(List<Ticket> tickets) {
+  Widget _buildBody(List<TicketEntity> tickets) {
     final ticketsUpcoming =
-        tickets.where((t) => t.status == "Available").toList();
+        tickets.where((t) => t.ticket.status == "Available").toList();
 
-    final ticketsChecked = tickets.where((t) => t.status == "Checked").toList();
+    final ticketsChecked =
+        tickets.where((t) => t.ticket.status == "Used").toList();
 
     final ticketsCancelled =
-        tickets.where((t) => t.status == "Cancelled").toList();
+        tickets.where((t) => t.ticket.status == "Cancelled").toList();
 
     return TabBarView(
       children: [
-        _buildTicketList('upcoming', ticketsUpcoming),
-        _buildTicketList('checked', ticketsChecked),
-        _buildTicketList('cancelled', ticketsCancelled),
+        TicketTabViewWidget(type: 'upcoming', filteredTickets: ticketsUpcoming),
+        TicketTabViewWidget(type: 'checked', filteredTickets: ticketsChecked),
+        TicketTabViewWidget(
+            type: 'cancelled', filteredTickets: ticketsCancelled),
       ],
     );
   }
+}
 
-  Widget _buildTicketList(String status, List<Ticket> filteredTickets) {
+class TicketTabViewWidget extends StatefulWidget {
+  final List<TicketEntity> filteredTickets;
+  final String type;
+
+  const TicketTabViewWidget({
+    super.key,
+    required this.filteredTickets,
+    required this.type,
+  });
+
+  @override
+  State<TicketTabViewWidget> createState() => _TicketTabViewWidgetState();
+}
+
+class _TicketTabViewWidgetState extends State<TicketTabViewWidget>
+    with AutomaticKeepAliveClientMixin {
+  //Create an instance of ScreenshotController
+  List<ScreenshotController> screenshotControllers = [];
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return _buildTicketList(widget.type, widget.filteredTickets);
+  }
+
+  Widget _buildTicketList(String status, List<TicketEntity> filteredTickets) {
     if (filteredTickets.isEmpty) {
       return _buildEmptyState(status);
     }
@@ -132,8 +152,14 @@ class _TicketScreenState extends State<TicketScreen> {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       itemCount: filteredTickets.length,
+      shrinkWrap: true,
       itemBuilder: (context, index) {
-        return _buildTicketCard(filteredTickets[index]);
+        final screenshotController = ScreenshotController();
+        screenshotControllers.add(screenshotController);
+        return _buildTicketCard(
+          filteredTickets[index],
+          screenshotController,
+        );
       },
     );
   }
@@ -162,7 +188,7 @@ class _TicketScreenState extends State<TicketScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: EdgeInsets.all(20),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: Colors.grey[200],
               shape: BoxShape.circle,
@@ -184,15 +210,19 @@ class _TicketScreenState extends State<TicketScreen> {
     );
   }
 
-  Widget _buildTicketCard(Ticket ticket) {
-    eventDetailBloc.add(FetchEventDetail(ticket.eventID));
+  Widget _buildTicketCard(
+    TicketEntity ticketEntity,
+    ScreenshotController screenshotController,
+  ) {
+    final event = ticketEntity.event;
+    final ticket = ticketEntity.ticket;
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => ViewTicketPage(
-              ticket: ticket,
+              ticket: ticketEntity.ticket,
             ),
           ),
         );
@@ -212,211 +242,202 @@ class _TicketScreenState extends State<TicketScreen> {
               ),
             ],
           ),
-          child: BlocBuilder(
-            bloc: eventDetailBloc,
-            builder: (context, state) {
-              Event? event;
-              if (state is EventDetailLoaded) {
-                event = state.event;
-              }
-              return Column(
-                children: [
-                  // Event Image and Basic Info
-                  Container(
-                    height: 140,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryColor,
-                      borderRadius:
-                          const BorderRadius.vertical(top: Radius.circular(20)),
-                      image: DecorationImage(
-                        image:
-                            CachedNetworkImageProvider(event?.thumbnail ?? ""),
-                        fit: BoxFit.cover,
-                        colorFilter: ColorFilter.mode(
-                          Colors.black.withOpacity(0.55),
-                          BlendMode.darken,
-                        ),
-                      ),
+          child: Column(
+            children: [
+              // Event Image and Basic Info
+              Container(
+                height: 140,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryColor,
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(20)),
+                  image: DecorationImage(
+                    image: CachedNetworkImageProvider(event.thumbnail ?? ""),
+                    fit: BoxFit.cover,
+                    colorFilter: ColorFilter.mode(
+                      Colors.black.withOpacity(0.55),
+                      BlendMode.darken,
                     ),
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          left: 20,
-                          bottom: 20,
-                          right: 20,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      left: 20,
+                      bottom: 20,
+                      right: 20,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            event.name,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
                             children: [
-                              Text(
-                                event?.name ?? "",
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
+                              const Icon(Icons.location_on,
+                                  color: Colors.white70, size: 16),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  event.location,
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 14,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              const SizedBox(height: 8),
-                              Row(
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Dotted Line
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                height: 20,
+                child: CustomPaint(
+                  painter: DottedLinePainter(),
+                  size: Size.infinite,
+                ),
+              ),
+              // Ticket Details
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    _buildTicketDetail(
+                      'Check-in time',
+                      DateFormat('MMM dd, yyyy - hh:mm a').format(
+                        event.date,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (ticket.usedAt != null && ticket.status == "Used")
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: _buildTicketDetail(
+                          'Used At',
+                          DateFormat('MMM dd, yyyy - hh:mm a')
+                              .format(ticket.usedAt!),
+                        ),
+                      ),
+                    _buildTicketDetail('Ticket Type', ticket.ticketType),
+                    const SizedBox(height: 16),
+                    _buildTicketDetail('Ticket ID', ticket.id),
+                    const SizedBox(height: 20),
+                    // QR Code
+                    if (ticket.usedAt == null && ticket.status == "Available")
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            _buildQRCode(ticket),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Icon(Icons.location_on,
-                                      color: Colors.white70, size: 16),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    child: Text(
-                                      event?.location ?? "",
-                                      style: const TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 14,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
+                                  const Text(
+                                    'Show this QR code at the venue',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Scan for quick entry',
+                                    style: TextStyle(
+                                      color: Colors.grey[600],
+                                      fontSize: 14,
                                     ),
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Dotted Line
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    height: 20,
-                    child: CustomPaint(
-                      painter: DottedLinePainter(),
-                      size: Size.infinite,
-                    ),
-                  ),
-                  // Ticket Details
-                  Padding(
-                    padding: EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        _buildTicketDetail(
-                          'Check-in at',
-                          DateFormat('MMM dd, yyyy - hh:mm a').format(
-                            event?.date ?? DateTime.now(),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        _buildTicketDetail('Ticket Type', ticket.ticketType),
-                        const SizedBox(height: 16),
-                        _buildTicketDetail('Ticket ID', ticket.id),
-                        const SizedBox(height: 20),
-                        // QR Code
-                        Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[100],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              _buildQRCode(ticket),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Show this QR code at the venue',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Scan for quick entry',
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 20),
-                        // Action Buttons
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: () async {
-                                  await captureAndShareTicket(ticket, event!);
-                                },
-                                icon: const Icon(Icons.share_outlined),
-                                label: const Text('Share'),
-                                style: OutlinedButton.styleFrom(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 12),
-                                  side: BorderSide(color: Colors.grey[300]!),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                onPressed: () async {
-                                  await handleCaptureAndDownloadTicket(
-                                      ticket, event!);
-                                },
-                                icon: const Icon(
-                                  Icons.download_outlined,
-                                  color: Colors.white,
-                                ),
-                                label: const Text(
-                                  'Download',
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primaryColor,
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 12),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                  ),
-                                ),
-                              ),
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                ],
-              );
-            },
+                      ),
+                    // Action Buttons
+                    if (ticket.usedAt == null && ticket.status == "Available")
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () async {
+                                await captureAndShareTicket(
+                                    ticket, event, screenshotController);
+                              },
+                              icon: Icon(
+                                Icons.share_outlined,
+                                color: AppColors.primaryColor,
+                              ),
+                              label: Text(
+                                'Share',
+                                style: TextStyle(
+                                  color: AppColors.primaryColor,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                side: BorderSide(color: Colors.grey[300]!),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () async {
+                                await handleCaptureAndDownloadTicket(
+                                  ticket,
+                                  event,
+                                  screenshotController,
+                                );
+                              },
+                              icon: const Icon(
+                                Icons.download_outlined,
+                                color: Colors.white,
+                              ),
+                              label: const Text(
+                                'Download',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryColor,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildQRCode(Ticket ticket) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: QrImageView(
-        data: ticket.qrCodeData,
-        version: QrVersions.auto,
-        size: 100,
-        gapless: false,
-        errorStateBuilder: (cxt, err) {
-          return const Center(
-            child: Text('Error generating QR code'),
-          );
-        },
       ),
     );
   }
@@ -449,8 +470,32 @@ class _TicketScreenState extends State<TicketScreen> {
     );
   }
 
+  Widget _buildQRCode(Ticket ticket) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: QrImageView(
+        data: ticket.qrCodeData,
+        version: QrVersions.auto,
+        size: 100,
+        gapless: false,
+        errorStateBuilder: (cxt, err) {
+          return const Center(
+            child: Text('Error generating QR code'),
+          );
+        },
+      ),
+    );
+  }
+
   Future<void> handleCaptureAndDownloadTicket(
-      Ticket ticket, Event event) async {
+    Ticket ticket,
+    Event event,
+    ScreenshotController screenshotController,
+  ) async {
     DialogUtils.showLoadingDialog(context);
     screenshotController
         .captureFromWidget(
@@ -472,7 +517,11 @@ class _TicketScreenState extends State<TicketScreen> {
     });
   }
 
-  Future<void> captureAndShareTicket(Ticket ticket, Event event) async {
+  Future<void> captureAndShareTicket(
+    Ticket ticket,
+    Event event,
+    ScreenshotController screenshotController,
+  ) async {
     DialogUtils.showLoadingDialog(context);
     screenshotController
         .captureFromWidget(
@@ -480,8 +529,8 @@ class _TicketScreenState extends State<TicketScreen> {
       ETicket(ticket: ticket, event: event),
     )
         .then((capturedImage) async {
-        // Share the image
-        await shareTicket(capturedImage);
+      // Share the image
+      await shareTicket(capturedImage);
       DialogUtils.hide(context);
     });
   }
@@ -505,7 +554,6 @@ class _TicketScreenState extends State<TicketScreen> {
     }
   }
 
-
   Future<void> saveImageToGallery(Uint8List imageBytes) async {
     try {
       // Save the image
@@ -523,6 +571,9 @@ class _TicketScreenState extends State<TicketScreen> {
       print('Error saving image to gallery: $e');
     }
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }
 
 // Custom Painter for dotted line

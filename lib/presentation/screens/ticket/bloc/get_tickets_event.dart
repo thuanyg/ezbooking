@@ -4,3 +4,9 @@ class GetTicketsOfUser extends GetTicketsEvent {
 
   GetTicketsOfUser(this.userID);
 }
+
+class GetTicketEntitiesOfUser extends GetTicketsEvent {
+  String userID;
+
+  GetTicketEntitiesOfUser(this.userID);
+}

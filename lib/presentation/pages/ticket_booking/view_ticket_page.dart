@@ -3,6 +3,7 @@ import 'package:ezbooking/presentation/pages/event/bloc/event_detail_event.dart'
 import 'package:ezbooking/presentation/pages/event/bloc/event_detail_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lottie/lottie.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:ezbooking/data/models/ticket.dart';
 import 'package:ezbooking/data/models/event.dart';
@@ -50,7 +51,12 @@ class _ViewTicketPageState extends State<ViewTicketPage> {
       body: BlocBuilder<EventDetailBloc, EventDetailState>(
         builder: (context, state) {
           if (state is EventDetailLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(
+              child: Lottie.asset(
+                "assets/animations/loading.json",
+                height: 80,
+              ),
+            );
           }
 
           if (state is EventDetailError) {

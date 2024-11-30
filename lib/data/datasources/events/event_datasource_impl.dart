@@ -175,11 +175,12 @@ class EventDatasourceImpl extends EventDatasource {
     final doc = await _firestoreService.getDocument("events", eventID);
     final data = doc.data() as Map<String, dynamic>;
     // Get Organizer
-    final organizerId = data["organizer"] as String;
+    final organizerId = data["organizer"] as String?;
     final organizerDoc = await FirebaseFirestore.instance
         .collection("organizers")
         .doc(organizerId)
         .get();
+
     final organizerData = organizerDoc.data() as Map<String, dynamic>;
 
     return Event.fromJson(data, organizer: Organizer.fromJson(organizerData));
@@ -348,4 +349,56 @@ class EventDatasourceImpl extends EventDatasource {
       throw Exception('Failed to fetch comment events: $e');
     }
   }
+
+  @override
+  Future<List<Event>> fetchPopularEvents({int? limit}) async {
+    final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    // Bước 1: Lấy tổng số lượng ticket cho mỗi sự kiện từ collection "orders"
+    final ordersSnapshot = await firestore.collection('orders').get();
+
+    final Map<String, int> eventOrderCounts = {};
+
+    for (var doc in ordersSnapshot.docs) {
+      final data = doc.data();
+      final eventID = data['eventID'] as String;
+      final ticketQuantity = data['ticketQuantity'] as int;
+
+      // Cộng dồn số lượng ticket cho từng sự kiện
+      eventOrderCounts[eventID] =
+          (eventOrderCounts[eventID] ?? 0) + ticketQuantity;
+    }
+
+    // Bước 2: Sắp xếp danh sách sự kiện theo tổng số lượng order
+    final sortedEventIDs = eventOrderCounts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value)); // Sắp xếp giảm dần
+
+    // Lấy danh sách giới hạn theo "limit"
+    List<String> topEventIDs = [];
+    if (limit != null) {
+      topEventIDs = sortedEventIDs.take(limit).map((e) => e.key).toList();
+    } else {
+      topEventIDs = sortedEventIDs.map((e) => e.key).toList();
+    }
+    // Bước 3: Lấy chi tiết sự kiện từ collection "events"
+    List<Event> popularEvents = [];
+
+    for (String eventID in topEventIDs) {
+      final eventDoc = await firestore.collection('events').doc(eventID).get();
+      if (eventDoc.exists) {
+        final eventData = eventDoc.data()!;
+        popularEvents.add(Event.fromJson(eventData));
+      }
+    }
+
+    return popularEvents;
+  }
+
+  @override
+  Future<List<Event>> fetchPopularEventsSortedByProximity(
+      {required int limit, required Position currentPosition}) async {
+    // TODO: implement fetchPopularEventsSortedByProximity
+    throw UnimplementedError();
+  }
+
 }

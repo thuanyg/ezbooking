@@ -2,8 +2,8 @@ import 'package:ezbooking/core/utils/utils.dart';
 import 'package:ezbooking/data/models/event.dart';
 import 'package:ezbooking/presentation/pages/event/event_detail.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/get_location_bloc.dart';
-import 'package:ezbooking/presentation/screens/explore/bloc/upcoming_event_bloc.dart';
-import 'package:ezbooking/presentation/screens/explore/bloc/upcoming_event_state.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/upcoming/upcoming_event_bloc.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/upcoming/upcoming_event_state.dart';
 import 'package:ezbooking/presentation/widgets/cards.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -25,8 +25,8 @@ class _UpComingEventState extends State<UpComingEvent> {
       builder: (context, state) {
         if (state is UpcomingEventLoading) {
           return Shimmer.fromColors(
-            baseColor: Colors.white54,
-            highlightColor: Colors.white,
+            baseColor: Colors.grey.shade200,
+            highlightColor: Colors.grey.shade50,
             child: buildUpcomingEventShimmer(),
           );
         }
@@ -98,12 +98,12 @@ class _UpComingEventState extends State<UpComingEvent> {
           return Container(
             margin: const EdgeInsets.only(right: 12),
             child: UpcomingCard(
-              id: "",
-              title: "",
-              date: "",
+              id: "#ID",
+              title: "Event Name",
+              date: "01/01/2020",
               imageLink: "",
-              location: "",
-              distance: "",
+              location: "Location",
+              distance: "xKm",
             ),
           );
         },

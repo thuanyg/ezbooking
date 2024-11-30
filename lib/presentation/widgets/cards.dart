@@ -4,9 +4,10 @@ import 'package:ezbooking/core/config/constants.dart';
 import 'package:ezbooking/core/utils/image_helper.dart';
 import 'package:ezbooking/core/utils/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class UpcomingCard extends StatelessWidget {
-  UpcomingCard({
+  const UpcomingCard({
     super.key,
     required this.id,
     required this.title,
@@ -16,7 +17,7 @@ class UpcomingCard extends StatelessWidget {
     required this.distance,
   });
 
-  String id, imageLink, date, title, location, distance;
+  final String id, imageLink, date, title, location, distance;
 
   @override
   Widget build(BuildContext context) {
@@ -131,70 +132,101 @@ class UpcomingCard extends StatelessWidget {
 }
 
 class PopularCard extends StatelessWidget {
-  PopularCard({
+  const PopularCard({
     super.key,
     required this.title,
     required this.date,
     required this.imageLink,
     required this.location,
+    required this.onTap,
   });
 
-  String imageLink, date, title, location;
+  final String imageLink, date, title, location;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    return Container(
-      height: 100,
-      width: size.width * 0.7,
-      decoration: BoxDecoration(
-        color: const Color(0xffefefff),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Row(
-          children: [
-            ImageHelper.loadAssetImage(
-              imageLink,
-              height: 80,
-              width: 80,
-              radius: BorderRadius.circular(12),
-            ),
-            Expanded(
-              child: Column(
-                children: [
-                  Text(
-                    title,
-                    style: AppStyles.title1,
-                    maxLines: 2,
-                    textAlign: TextAlign.start,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Row(
-                    children: [
-                      ImageHelper.loadAssetImage(
-                        "${assetImageLink}ic_location.png",
-                        height: 14,
-                        tintColor: Colors.grey,
-                      ),
-                      const SizedBox(width: 4.0),
-                      Text(
-                        location,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppStyles.title2.copyWith(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 100,
+        width: size.width * 0.7,
+        decoration: BoxDecoration(
+          color: const Color(0xffefefff),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Row(
+            children: [
+              ImageHelper.loadNetworkImage(
+                imageLink,
+                height: 90,
+                width: 75,
+                fit: BoxFit.cover,
+                radius: BorderRadius.circular(5),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      title,
+                      style: AppStyles.title1,
+                      maxLines: 2,
+                      textAlign: TextAlign.start,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Row(
+                      children: [
+                        ImageHelper.loadAssetImage(
+                          "${assetImageLink}ic_location.png",
+                          height: 14,
+                          tintColor: Colors.grey,
+                        ),
+                        const SizedBox(width: 4.0),
+                        Text(
+                          location,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppStyles.title2.copyWith(
                             color: Colors.grey,
                             fontSize: 13,
                             fontWeight: FontWeight.w400,
-                            fontStyle: FontStyle.italic),
-                      )
-                    ],
-                  ),
-                ],
-              ),
-            )
-          ],
+                            fontStyle: FontStyle.italic,
+                          ),
+                        )
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.date_range,
+                          color: Colors.grey,
+                          size: 15,
+                        ),
+                        const SizedBox(width: 4.0),
+                        Text(
+                          date,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppStyles.title2.copyWith(
+                            color: Colors.grey,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        )
+                      ],
+                    ),
+                  ],
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );
@@ -202,7 +234,7 @@ class PopularCard extends StatelessWidget {
 }
 
 class EventStandardCard extends StatelessWidget {
-  EventStandardCard({
+  const EventStandardCard({
     super.key,
     required this.title,
     required this.date,
@@ -210,16 +242,17 @@ class EventStandardCard extends StatelessWidget {
     required this.location,
     required this.onPressed,
     required this.distance,
+    this.color,
   });
 
   final VoidCallback onPressed;
-  String imageLink, date, title, location, distance;
+  final String imageLink, date, title, location, distance;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
     return Card(
-      color: Colors.white,
+      color: color ?? Colors.white,
       elevation: 1,
       child: InkWell(
         onTap: onPressed,

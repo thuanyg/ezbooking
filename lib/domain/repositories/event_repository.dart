@@ -12,6 +12,13 @@ abstract class EventRepository {
     required Position currentPosition,
   });
 
+  Future<List<Event>> fetchPopularEvents({int? limit});
+
+  Future<List<Event>> fetchPopularEventsSortedByProximity({
+    required int limit,
+    required Position currentPosition,
+  });
+
   Future<List<Event>> fetchUpcomingEvents({required int limit});
 
   Future<List<Event>> fetchUpcomingEventsSortedByProximity({

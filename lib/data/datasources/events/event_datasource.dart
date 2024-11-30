@@ -12,13 +12,19 @@ abstract class EventDatasource {
     required Position currentPosition,
   });
 
+  Future<List<Event>> fetchPopularEvents({int? limit});
+
+  Future<List<Event>> fetchPopularEventsSortedByProximity({
+    required int limit,
+    required Position currentPosition,
+  });
+
   Future<List<Event>> fetchUpcomingEvents({required int limit});
 
   Future<List<Event>> fetchUpcomingEventsSortedByProximity({
     required int limit,
     required Position currentPosition,
   });
-
 
   Future<List<Event>> fetchFavoriteEvents({required String userID});
 
@@ -33,4 +39,5 @@ abstract class EventDatasource {
 
   // Fetch Comment of event
   Future<List<Comment>> fetchComments(String eventID);
+
 }

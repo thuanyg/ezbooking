@@ -27,9 +27,10 @@ import 'package:ezbooking/domain/usecases/events/favorite_event.dart';
 import 'package:ezbooking/domain/usecases/events/fetch_comments.dart';
 import 'package:ezbooking/domain/usecases/events/fetch_event_detail.dart';
 import 'package:ezbooking/domain/usecases/events/fetch_events_latest.dart';
+import 'package:ezbooking/domain/usecases/events/fetch_events_popular.dart';
 import 'package:ezbooking/domain/usecases/events/fetch_events_upcoming.dart';
 import 'package:ezbooking/domain/usecases/maps/map_usecase.dart';
-import 'package:ezbooking/domain/usecases/orders/create_order.dart';
+import 'package:ezbooking/domain/usecases/orders/create_order_ticket.dart';
 import 'package:ezbooking/domain/usecases/ticket/create_ticket.dart';
 import 'package:ezbooking/domain/usecases/ticket/get_tickets.dart';
 import 'package:ezbooking/domain/usecases/user/comment_event.dart';
@@ -44,11 +45,11 @@ import 'package:ezbooking/presentation/pages/login/bloc/login_bloc.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/get_location_bloc.dart';
 import 'package:ezbooking/presentation/pages/signup/bloc/signup_bloc.dart';
 import 'package:ezbooking/presentation/pages/ticket_booking/bloc/orders/create_order_bloc.dart';
-import 'package:ezbooking/presentation/pages/ticket_booking/bloc/tickets/create_ticket_bloc.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/update_user_bloc.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_bloc.dart';
-import 'package:ezbooking/presentation/screens/explore/bloc/latest_event_bloc.dart';
-import 'package:ezbooking/presentation/screens/explore/bloc/upcoming_event_bloc.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/latest/latest_event_bloc.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/popular/popular_event_bloc.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/upcoming/upcoming_event_bloc.dart';
 import 'package:ezbooking/presentation/screens/ticket/bloc/get_tickets_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_it/get_it.dart';
@@ -117,8 +118,16 @@ void initServiceLocator() {
     () => FetchEventDetailUseCase(sl<EventRepository>()),
   );
 
+  sl.registerLazySingleton<FetchEventsPopularUseCase>(
+    () => FetchEventsPopularUseCase(sl<EventRepository>()),
+  );
+
   sl.registerLazySingleton<LatestEventBloc>(
     () => LatestEventBloc(sl<FetchEventsLatestUseCase>()),
+  );
+
+  sl.registerLazySingleton<PopularEventBloc>(
+    () => PopularEventBloc(sl<FetchEventsPopularUseCase>()),
   );
 
   sl.registerLazySingleton<UpcomingEventBloc>(
@@ -206,12 +215,12 @@ void initServiceLocator() {
     () => OrderRepositoryImpl(sl<OrderDatasource>()),
   );
 
-  sl.registerLazySingleton<CreateOrderUseCase>(
-    () => CreateOrderUseCase(sl<OrderRepository>()),
+  sl.registerLazySingleton<CreateOrderAndTicketUseCase>(
+    () => CreateOrderAndTicketUseCase(sl<OrderRepository>()),
   );
 
   sl.registerLazySingleton<CreateOrderBloc>(
-    () => CreateOrderBloc(sl<CreateOrderUseCase>()),
+    () => CreateOrderBloc(sl<CreateOrderAndTicketUseCase>()),
   );
 
   // Ticket
@@ -227,9 +236,6 @@ void initServiceLocator() {
     () => CreateTicketUseCase(sl<TicketRepository>()),
   );
 
-  sl.registerLazySingleton<CreateTicketBloc>(
-    () => CreateTicketBloc(sl<CreateTicketUseCase>()),
-  );
 
   sl.registerLazySingleton<GetTicketsUseCase>(
     () => GetTicketsUseCase(sl<TicketRepository>()),
@@ -238,4 +244,6 @@ void initServiceLocator() {
   sl.registerLazySingleton<GetTicketsBloc>(
     () => GetTicketsBloc(sl<GetTicketsUseCase>()),
   );
+
+
 }

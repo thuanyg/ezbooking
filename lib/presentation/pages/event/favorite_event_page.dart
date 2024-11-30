@@ -8,6 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
 
 class FavoritesEventsPage extends StatelessWidget {
   FavoritesEventsPage({super.key});
@@ -51,8 +52,11 @@ class FavoritesEventsPage extends StatelessWidget {
           : BlocBuilder<FetchFavoriteBloc, FetchFavoriteState>(
               builder: (context, state) {
                 if (state is FetchFavoriteLoading) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
+                  return Center(
+                    child: Lottie.asset(
+                      "assets/animations/loading.json",
+                      height: 80,
+                    ),
                   );
                 }
                 if (state is FetchFavoriteSuccess) {

@@ -30,6 +30,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -64,6 +65,7 @@ class _EventDetailState extends State<EventDetail> {
     favoriteBloc = BlocProvider.of<FavoriteBloc>(context);
     commentBloc = BlocProvider.of<CommentBloc>(context);
     fetchCommentBloc = BlocProvider.of<FetchCommentBloc>(context);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       String? eventID = ModalRoute.of(context)?.settings.arguments as String?;
       eventDetailBloc.add(FetchEventDetail(eventID ?? ""));
@@ -86,15 +88,17 @@ class _EventDetailState extends State<EventDetail> {
 
   @override
   Widget build(BuildContext context) {
-    print("BUILD");
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: BlocBuilder<EventDetailBloc, EventDetailState>(
           builder: (context, state) {
             if (state is EventDetailLoading) {
-              return const Center(
-                child: CircularProgressIndicator(),
+              return Center(
+                child: Lottie.asset(
+                  "assets/animations/loading.json",
+                  height: 80,
+                ),
               );
             }
 
@@ -552,17 +556,15 @@ class _EventDetailState extends State<EventDetail> {
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 12),
                               decoration: BoxDecoration(
-                                color: state is CommentLoading
-                                    ? Colors.grey
-                                    : AppColors.primaryColor,
+                                color: AppColors.primaryColor,
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Center(
                                 child: state is CommentLoading
-                                    ? const SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: CircularProgressIndicator(),
+                                    ? Lottie.asset(
+                                        "assets/animations/loading.json",
+                                        height: 48,
+                                        width: 48,
                                       )
                                     : const Text(
                                         "SEND",
@@ -584,11 +586,44 @@ class _EventDetailState extends State<EventDetail> {
                     bloc: fetchCommentBloc,
                     builder: (context, state) {
                       if (state is FetchCommentsLoading) {
-                        return const Center(child: CircularProgressIndicator());
+                        return Center(
+                          child: Lottie.asset(
+                            "assets/animations/loading.json",
+                            height: 80,
+                          ),
+                        );
                       }
                       if (state is FetchCommentsSuccess) {
                         if (state.comments.isEmpty) {
-                          return const Text("No comments.");
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.comments_disabled,
+                                    size: 28,
+                                    color: Colors.grey[400],
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  "Be the first to comment!",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    color: Colors.grey[400],
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
                         }
                         return ListView.separated(
                           shrinkWrap: true,

@@ -3,19 +3,21 @@ import 'package:ezbooking/core/config/app_colors.dart';
 import 'package:ezbooking/core/config/app_styles.dart';
 import 'package:ezbooking/core/config/constants.dart';
 import 'package:ezbooking/core/utils/image_helper.dart';
-import 'package:ezbooking/map_sample.dart';
 import 'package:ezbooking/presentation/pages/event/event_upcoming.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/get_location_bloc.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/location_state.dart';
-import 'package:ezbooking/presentation/screens/explore/bloc/filter_bloc.dart';
-import 'package:ezbooking/presentation/screens/explore/bloc/filter_event.dart';
-import 'package:ezbooking/presentation/screens/explore/bloc/latest_event_bloc.dart';
-import 'package:ezbooking/presentation/screens/explore/bloc/upcoming_event_bloc.dart';
-import 'package:ezbooking/presentation/screens/explore/bloc/upcoming_event_event.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/filter/filter_bloc.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/filter/filter_event.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/latest/latest_event_bloc.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/popular/popular_event_bloc.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/popular/popular_event_event.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/upcoming/upcoming_event_bloc.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/upcoming/upcoming_event_event.dart';
+import 'package:ezbooking/presentation/screens/explore/widgets/latest_event.dart';
+import 'package:ezbooking/presentation/screens/explore/widgets/popular_event.dart';
 import 'package:ezbooking/presentation/screens/explore/widgets/up_coming_event.dart';
 import 'package:ezbooking/presentation/search_location/address_finder_page.dart';
 import 'package:ezbooking/presentation/widgets/button.dart';
-import 'package:ezbooking/presentation/widgets/cards.dart';
 import 'package:ezbooking/presentation/widgets/category.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -31,9 +33,10 @@ class ExploreScreen extends StatefulWidget {
 class _ExploreScreenState extends State<ExploreScreen>
     with AutomaticKeepAliveClientMixin {
   // Bloc
-  late FilterBloc filterBloc;
+  late final FilterBloc filterBloc;
   late final UpcomingEventBloc upcomingEventBloc;
   late final LatestEventBloc latestEventBloc;
+  late final PopularEventBloc popularEventBloc;
   late final GetLocationBloc locationBloc;
 
   @override
@@ -43,18 +46,23 @@ class _ExploreScreenState extends State<ExploreScreen>
     upcomingEventBloc = BlocProvider.of<UpcomingEventBloc>(context);
     latestEventBloc = BlocProvider.of<LatestEventBloc>(context);
     filterBloc = BlocProvider.of<FilterBloc>(context);
+    popularEventBloc = BlocProvider.of<PopularEventBloc>(context);
+
     // Fetch Data Initial
     if (locationBloc.locationResult == null) {
       upcomingEventBloc.add(FetchUpcomingEvent(
         limit: 10,
         isFetchApproximately: false,
       ));
+
+      popularEventBloc.add(FetchPopularEvent());
     } else {
       upcomingEventBloc.add(FetchUpcomingEvent(
         limit: 10,
         isFetchApproximately: true,
-        position: locationBloc.locationResult!.position,
+        position: locationBloc.locationResult?.position,
       ));
+      popularEventBloc.add(FetchPopularEvent());
     }
   }
 
@@ -106,17 +114,16 @@ class _ExploreScreenState extends State<ExploreScreen>
         ],
       ),
     );
-    final body = Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 18),
+
+    const body = Padding(
+      padding: EdgeInsets.symmetric(vertical: 4, horizontal: 18),
       child: Column(
         children: [
-          const UpComingEvent(),
-          buildShowByCategory(label: 'Popular Now', onSeeAll: () {}),
-          buildPopularNowEvent(),
-          buildShowByCategory(label: 'Popular Now', onSeeAll: () {}),
-          buildPopularNowEvent(),
-          buildShowByCategory(label: 'Popular Now', onSeeAll: () {}),
-          buildPopularNowEvent(),
+          UpComingEvent(),
+          SizedBox(height: 16),
+          PopularEvent(),
+          SizedBox(height: 16),
+          LatestEvent(),
         ],
       ),
     );
@@ -130,7 +137,7 @@ class _ExploreScreenState extends State<ExploreScreen>
           delegate: HeaderStickyDelegate(),
           pinned: true,
         ),
-        SliverToBoxAdapter(
+        const SliverToBoxAdapter(
           child: body,
         )
       ],
@@ -472,29 +479,6 @@ class _ExploreScreenState extends State<ExploreScreen>
     );
   }
 
-  Widget buildPopularNowEvent() {
-    return SizedBox(
-      height: 200,
-      child: GridView.builder(
-        scrollDirection: Axis.horizontal,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 4,
-          childAspectRatio: 0.3,
-        ),
-        itemCount: 10,
-        itemBuilder: (context, index) {
-          return PopularCard(
-            title: "International Band Events",
-            date: "10 June",
-            imageLink: "${assetImageLink}img_event_example2.png",
-            location: "36 Guild Street London, UK ",
-          );
-        },
-      ),
-    );
-  }
 
   @override
   bool get wantKeepAlive => true;

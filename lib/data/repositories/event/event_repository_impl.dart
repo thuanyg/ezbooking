@@ -66,6 +66,18 @@ class EventRepositoryImpl extends EventRepository {
 
   @override
   Future<List<Comment>> fetchComments(String eventID) async {
-    return _datasource.fetchComments(eventID);
+    return await _datasource.fetchComments(eventID);
   }
+
+  @override
+  Future<List<Event>> fetchPopularEvents({int? limit}) async {
+    return await _datasource.fetchPopularEvents(limit: limit);
+  }
+
+  @override
+  Future<List<Event>> fetchPopularEventsSortedByProximity({required int limit, required Position currentPosition}) async {
+    // TODO: implement fetchPopularEventsSortedByProximity
+    throw UnimplementedError();
+  }
+
 }

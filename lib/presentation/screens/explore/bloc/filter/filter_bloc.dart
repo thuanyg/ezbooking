@@ -1,7 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:ezbooking/core/config/constants.dart';
-import 'package:ezbooking/presentation/screens/explore/bloc/filter_event.dart';
-import 'package:ezbooking/presentation/screens/explore/bloc/filter_state.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/filter/filter_event.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/filter/filter_state.dart';
 import 'package:flutter/material.dart';
 
 class FilterBloc extends Bloc<FilterEvent, FilterState> {

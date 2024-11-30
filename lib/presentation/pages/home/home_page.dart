@@ -1,11 +1,13 @@
 import 'dart:io';
 
 import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:ezbooking/core/utils/utils.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/get_location_bloc.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/location_state.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_bloc.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_event.dart';
+import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_state.dart';
 import 'package:ezbooking/presentation/screens/event/event_screen.dart';
 import 'package:ezbooking/presentation/screens/explore/explore_screen.dart';
 import 'package:ezbooking/presentation/screens/profile/profile_screen.dart';
@@ -18,6 +20,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lottie/lottie.dart';
 
 class HomePage extends StatefulWidget {
   static String routeName = "/HomePage";
@@ -36,14 +39,22 @@ class _HomePageState extends State<HomePage> {
   int _tabSelectedIndex = 0;
 
   late GetLocationBloc locationBloc;
+  late UserInfoBloc userInfoBloc;
 
   @override
   void initState() {
     super.initState();
-    User? user = FirebaseAuth.instance.currentUser;
-    BlocProvider.of<UserInfoBloc>(context).add(FetchUserInfo(user!.uid));
+    userInfoBloc = BlocProvider.of<UserInfoBloc>(context);
     locationBloc = BlocProvider.of<GetLocationBloc>(context);
     locationBloc.getCurrentAddress(context);
+    handleFetchUserInfo();
+  }
+
+  handleFetchUserInfo() {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (userInfoBloc.user == null) {
+      userInfoBloc.add(FetchUserInfo(user!.uid));
+    }
   }
 
   Future<bool?> _showBackDialog() {
@@ -92,7 +103,25 @@ class _HomePageState extends State<HomePage> {
         bloc: locationBloc,
         builder: (context, state) {
           if (state is LocationLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Lottie.asset(
+                    "assets/animations/loading.json",
+                    height: 80,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Initializing...",
+                    style: AppStyles.title1.copyWith(
+                      color: AppColors.primaryColor,
+                    ),
+                  ),
+                ],
+              ),
+            );
           }
 
           if (state is LocationSuccess) {
@@ -114,19 +143,29 @@ class _HomePageState extends State<HomePage> {
                     backgroundColor: Colors.white,
                     child: Column(
                       children: [
-                        const SizedBox(height: 36),
+                        const SizedBox(height: 50),
                         CircleAvatar(
                           radius: 40,
-                          backgroundColor: Colors.black12,
-                          child: ImageHelper.loadAssetImage(
-                              "${assetImageLink}ic_avatar.png",
-                              width: 40,
-                              height: 40,
-                              fit: BoxFit.cover),
+                          backgroundColor: Colors.grey.shade200,
+                          backgroundImage: CachedNetworkImageProvider(
+                            userInfoBloc.user?.avatarUrl ??
+                                'https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg',
+                            maxHeight: 50,
+                            maxWidth: 50,
+                          ),
                         ),
-                        Text(
-                          "ThuanHT",
-                          style: AppStyles.title1,
+                        const SizedBox(height: 10),
+                        BlocBuilder(
+                          bloc: userInfoBloc,
+                          builder: (context, state) {
+                            if (state is UserInfoLoaded) {
+                              return Text(
+                                state.user.fullName ?? "",
+                                style: AppStyles.h5,
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
                         ),
                         Expanded(
                           child: Padding(
@@ -160,19 +199,19 @@ class _HomePageState extends State<HomePage> {
                     ProfileScreen()
                   ],
                 ),
-                floatingActionButton: FloatingActionButton(
-                  onPressed: () {},
-                  backgroundColor: AppColors.primaryColor,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(50)),
-                  child: const Icon(
-                    Icons.add,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                ),
-                floatingActionButtonLocation:
-                    FloatingActionButtonLocation.centerDocked,
+                // floatingActionButton: FloatingActionButton(
+                //   onPressed: () {},
+                //   backgroundColor: AppColors.primaryColor,
+                //   shape: RoundedRectangleBorder(
+                //       borderRadius: BorderRadius.circular(50)),
+                //   child: const Icon(
+                //     Icons.add,
+                //     color: Colors.white,
+                //     size: 28,
+                //   ),
+                // ),
+                // floatingActionButtonLocation:
+                //     FloatingActionButtonLocation.centerDocked,
                 bottomNavigationBar: buildBottomNavigationBar(),
               ),
             );
@@ -209,7 +248,7 @@ class _HomePageState extends State<HomePage> {
           ],
         );
       },
-      gapLocation: GapLocation.center,
+      gapLocation: GapLocation.none,
       notchSmoothness: NotchSmoothness.verySmoothEdge,
       leftCornerRadius: 16,
       rightCornerRadius: 16,
@@ -217,9 +256,11 @@ class _HomePageState extends State<HomePage> {
       onTap: (index) {
         setState(() {
           _tabSelectedIndex = index;
-          _pageViewController.animateToPage(index,
-              duration: const Duration(milliseconds: 300),
-              curve: Easing.standard);
+          _pageViewController.animateToPage(
+            index,
+            duration: const Duration(milliseconds: 300),
+            curve: Easing.standard,
+          );
         });
       },
     );

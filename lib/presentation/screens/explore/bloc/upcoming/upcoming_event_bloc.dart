@@ -1,7 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:ezbooking/domain/usecases/events/fetch_events_upcoming.dart';
-import 'package:ezbooking/presentation/screens/explore/bloc/upcoming_event_event.dart';
-import 'package:ezbooking/presentation/screens/explore/bloc/upcoming_event_state.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/upcoming/upcoming_event_event.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/upcoming/upcoming_event_state.dart';
 
 class UpcomingEventBloc extends Bloc<UpcomingEventEvent, UpcomingEventState> {
   final FetchEventsUpcomingUseCase _fetchEventsUpcomingUseCase;

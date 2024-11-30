@@ -9,12 +9,12 @@ import 'package:ezbooking/presentation/pages/maps/bloc/get_location_bloc.dart';
 import 'package:ezbooking/presentation/pages/signup/bloc/signup_bloc.dart';
 import 'package:ezbooking/presentation/pages/splash/splash_page.dart';
 import 'package:ezbooking/presentation/pages/ticket_booking/bloc/orders/create_order_bloc.dart';
-import 'package:ezbooking/presentation/pages/ticket_booking/bloc/tickets/create_ticket_bloc.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/update_user_bloc.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_bloc.dart';
-import 'package:ezbooking/presentation/screens/explore/bloc/filter_bloc.dart';
-import 'package:ezbooking/presentation/screens/explore/bloc/latest_event_bloc.dart';
-import 'package:ezbooking/presentation/screens/explore/bloc/upcoming_event_bloc.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/filter/filter_bloc.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/latest/latest_event_bloc.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/popular/popular_event_bloc.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/upcoming/upcoming_event_bloc.dart';
 import 'package:ezbooking/presentation/screens/ticket/bloc/get_tickets_bloc.dart';
 import 'package:ezbooking/routes.dart';
 import 'package:flutter/material.dart';
@@ -30,21 +30,21 @@ void main() async {
   runApp(
     MultiBlocProvider(
       providers: [
+        BlocProvider(create: (_) => FilterBloc()),
         BlocProvider(create: (_) => sl<LoginBloc>()),
         BlocProvider(create: (_) => sl<SignupBloc>()),
         BlocProvider(create: (_) => sl<LatestEventBloc>()),
         BlocProvider(create: (_) => sl<UpcomingEventBloc>()),
+        BlocProvider(create: (_) => sl<PopularEventBloc>()),
         BlocProvider(create: (_) => sl<EventDetailBloc>()),
         BlocProvider(create: (_) => sl<UserInfoBloc>()),
         BlocProvider(create: (_) => sl<UpdateUserBloc>()),
         BlocProvider(create: (_) => sl<FavoriteBloc>()),
         BlocProvider(create: (_) => sl<FetchFavoriteBloc>()),
-        BlocProvider(create: (_) => FilterBloc()),
         BlocProvider(create: (_) => sl<GetLocationBloc>()),
         BlocProvider(create: (_) => sl<FetchCommentBloc>()),
         BlocProvider(create: (_) => sl<CommentBloc>()),
         BlocProvider(create: (_) => sl<CreateOrderBloc>()),
-        BlocProvider(create: (_) => sl<CreateTicketBloc>()),
         BlocProvider(create: (_) => sl<GetTicketsBloc>()),
       ],
       child: const MyApp(),
@@ -59,7 +59,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'EzBooking Application',
+      title: 'EzBooking',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         scaffoldBackgroundColor: Colors.white,

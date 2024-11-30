@@ -1,32 +1,92 @@
-import 'dart:math';
+import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:ezbooking/core/config/app_colors.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ezbooking/core/config/app_styles.dart';
 import 'package:ezbooking/core/utils/dialogs.dart';
+import 'package:ezbooking/core/utils/utils.dart';
 import 'package:ezbooking/data/models/user_model.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/update_user_bloc.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/update_user_event.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/update_user_state.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_bloc.dart';
+import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_event.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_state.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:image_picker/image_picker.dart';
 
-class MyProfilePage extends StatelessWidget {
+class MyProfilePage extends StatefulWidget {
   MyProfilePage({super.key});
 
   static const routeName = 'MyProfilePage';
 
+  @override
+  State<MyProfilePage> createState() => _MyProfilePageState();
+}
+
+class _MyProfilePageState extends State<MyProfilePage> {
   final genders = ["Male", "Female", "Non Binary", "Other"];
+
+  XFile? pickedImage;
+  late UserInfoBloc userInfoBloc;
+  late UpdateUserBloc updateUserBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    userInfoBloc = BlocProvider.of<UserInfoBloc>(context);
+    updateUserBloc = BlocProvider.of<UpdateUserBloc>(context);
+  }
+
+  uploadImage() async {
+    DialogUtils.showLoadingDialog(context);
+
+    final user = userInfoBloc.user;
+    // Upload image to Firebase Storage
+    final _storage = FirebaseStorage.instance;
+    try {
+      String fileName = user!.fullName! + AppUtils.generateRandomString(6);
+      File imageFile = File(pickedImage!.path);
+
+      // Upload image to Firebase Storage
+      UploadTask uploadTask = _storage
+          .ref('images/avatars/$fileName')
+          .putFile(imageFile);
+
+      // Wait for the upload to complete
+      TaskSnapshot snapshot = await uploadTask;
+
+      // Get the download URL of the uploaded image
+      String downloadUrl = await snapshot.ref.getDownloadURL();
+
+      // Save the image URL in Firestore
+      await FirebaseFirestore.instance.collection('users').doc(user.id).update({
+        'avatarUrl': downloadUrl,
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Image uploaded successfully!")),
+      );
+
+      userInfoBloc.add(FetchUserInfo(user.id!));
+    } catch (e) {
+      print("Error uploading image: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error uploading image!")),
+      );
+    } finally {
+      DialogUtils.hide(context);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final userInfoBloc = BlocProvider.of<UserInfoBloc>(context);
-    final updateUserBloc = BlocProvider.of<UpdateUserBloc>(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -64,21 +124,40 @@ class MyProfilePage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const CircleAvatar(
-                        radius: 35,
-                        backgroundImage: CachedNetworkImageProvider(
-                          "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQdxLYtLxr2EMj73RfHjJAs_yAL-zcFPwYGLQ&s",
-                          maxWidth: 100,
-                          maxHeight: 100,
-                        ),
+                      GestureDetector(
+                        onTap: () async {
+                          final ImagePicker imagePicker = ImagePicker();
+                          final XFile? image = await imagePicker.pickImage(
+                              source: ImageSource.gallery);
+                          if (image == null) return;
+                          setState(() {
+                            pickedImage = image;
+                          });
+                          uploadImage();
+                        },
+                        child: pickedImage != null
+                            ? CircleAvatar(
+                                radius: 35,
+                                backgroundImage: FileImage(
+                                  File(pickedImage!.path),
+                                ),
+                              )
+                            : const CircleAvatar(
+                                radius: 35,
+                                backgroundImage: CachedNetworkImageProvider(
+                                  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQdxLYtLxr2EMj73RfHjJAs_yAL-zcFPwYGLQ&s",
+                                  maxWidth: 100,
+                                  maxHeight: 100,
+                                ),
+                              ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 36),
                       Text(
                         state.user.fullName ?? "Undefined",
                         style:
                             AppStyles.h5.copyWith(fontWeight: FontWeight.w500),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 20),
                       buildListTileInfoItem(
                         label: "Email",
                         text: state.user.email ?? "Undefined",

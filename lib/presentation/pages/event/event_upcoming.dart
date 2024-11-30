@@ -6,6 +6,7 @@ import 'package:ezbooking/presentation/widgets/cards.dart';
 import 'package:firebase_ui_firestore/firebase_ui_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
 
 class EventUpComingPage extends StatefulWidget {
   const EventUpComingPage({super.key});
@@ -53,8 +54,14 @@ class _EventUpComingPageState extends State<EventUpComingPage>
 
     return FirestoreListView<Event>(
       query: eventsQuery,
-      loadingBuilder: (context) =>
-          const Center(child: CircularProgressIndicator()),
+      loadingBuilder: (context) {
+        return Center(
+          child: Lottie.asset(
+            "assets/animations/loading.json",
+            height: 80,
+          ),
+        );
+      },
       errorBuilder: (context, error, stackTrace) => const Center(
         child: Text(
           "Error",
@@ -70,7 +77,6 @@ class _EventUpComingPageState extends State<EventUpComingPage>
         );
       },
       itemBuilder: (context, snapshot) {
-        // `post` has a type of `Post`.
         final event = snapshot.data();
         return EventStandardCard(
           distance: "1.2km",

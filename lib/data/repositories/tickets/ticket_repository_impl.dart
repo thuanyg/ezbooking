@@ -1,5 +1,6 @@
 import 'package:ezbooking/data/datasources/tickets/ticket_datasource.dart';
 import 'package:ezbooking/data/models/ticket.dart';
+import 'package:ezbooking/domain/entities/ticket_entity.dart';
 import 'package:ezbooking/domain/repositories/ticket_repository.dart';
 
 class TicketRepositoryImpl extends TicketRepository {
@@ -13,7 +14,11 @@ class TicketRepositoryImpl extends TicketRepository {
   }
 
   @override
-  Future<List<Ticket>> fetchTicketOfUser(String userID)  async{
+  Future<List<Ticket>> fetchTicketOfUser(String userID) async {
     return await datasource.fetchTicketOfUser(userID);
   }
+
+  @override
+  Stream<List<TicketEntity>> fetchTicketEntitiesOfUser(String userID) =>
+      datasource.fetchTicketEntitiesOfUser(userID);
 }

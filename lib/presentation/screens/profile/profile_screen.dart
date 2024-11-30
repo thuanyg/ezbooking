@@ -1,11 +1,14 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:ezbooking/core/config/app_styles.dart';
+import 'package:ezbooking/core/utils/dialogs.dart';
 import 'package:ezbooking/core/utils/image_helper.dart';
 import 'package:ezbooking/presentation/pages/event/favorite_event_page.dart';
+import 'package:ezbooking/presentation/pages/login/login_page.dart';
 import 'package:ezbooking/presentation/pages/payment_method/payment_method_page.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_bloc.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_state.dart';
 import 'package:ezbooking/presentation/pages/user_profile/my_profile_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -65,7 +68,7 @@ class ProfileScreen extends StatelessWidget {
                     contentPadding: const EdgeInsets.all(0),
                     leading: const CircleAvatar(
                       backgroundImage: CachedNetworkImageProvider(
-                        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQdxLYtLxr2EMj73RfHjJAs_yAL-zcFPwYGLQ&s",
+                        "https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg",
                       ),
                     ),
                     title: Text(state.user.fullName ?? "Guess"),
@@ -153,7 +156,8 @@ class ProfileScreen extends StatelessWidget {
             buildSettingItem(
               title: "Favorite events",
               icon: const Icon(Icons.bookmark_added),
-              onTap: () => Navigator.pushNamed(context, FavoritesEventsPage.routeName),
+              onTap: () =>
+                  Navigator.pushNamed(context, FavoritesEventsPage.routeName),
             ),
             const Divider(
               color: Colors.grey,
@@ -173,7 +177,8 @@ class ProfileScreen extends StatelessWidget {
             buildSettingItem(
               title: "Payments and payouts",
               icon: const Icon(Icons.payments_outlined),
-              onTap: () => Navigator.pushNamed(context, PaymentMethodPage.routeName),
+              onTap: () =>
+                  Navigator.pushNamed(context, PaymentMethodPage.routeName),
             ),
             const Divider(
               color: Colors.grey,
@@ -195,7 +200,47 @@ class ProfileScreen extends StatelessWidget {
               icon: const Icon(Icons.settings_applications_outlined),
               onTap: () {},
             ),
-            const SizedBox(height: 20),
+            const Divider(
+              color: Colors.grey,
+              height: 1,
+              thickness: .1,
+            ),
+            buildSettingItem(
+              title: "Sign Out",
+              color: Colors.red,
+              icon: const Icon(
+                Icons.login_outlined,
+                color: Colors.red,
+              ),
+              onTap: () {
+                DialogUtils.showConfirmationDialog(
+                  context: context,
+                  title: "Are you certain you want to sign out?",
+                  textCancelButton: "Cancel",
+                  textAcceptButton: "Logout",
+                  acceptPressed: () async {
+                    DialogUtils.showLoadingDialog(context);
+                    await FirebaseAuth.instance.signOut();
+                    await Future.delayed(
+                      const Duration(milliseconds: 800),
+                      () {
+                        Navigator.pushNamedAndRemoveUntil(
+                          context,
+                          LoginPage.routeName,
+                          (route) => true,
+                        );
+                      },
+                    );
+                  },
+                );
+              },
+            ),
+            const Divider(
+              color: Colors.grey,
+              height: 1,
+              thickness: .1,
+            ),
+            const SizedBox(height: 50),
             FutureBuilder<PackageInfo>(
               future: PackageInfo.fromPlatform(),
               builder: (context, snapshot) {
@@ -206,7 +251,8 @@ class ProfileScreen extends StatelessWidget {
                       child: Text(
                         'Version: ${snapshot.data?.version ?? "..."}',
                         style: const TextStyle(
-                          fontWeight: FontWeight.w300,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.grey,
                           fontStyle: FontStyle.italic,
                         ),
                       ),
@@ -227,6 +273,7 @@ class ProfileScreen extends StatelessWidget {
     required String title,
     required Icon icon,
     required onTap,
+    Color color = Colors.black,
   }) {
     return ListTile(
       onTap: onTap,
@@ -234,14 +281,16 @@ class ProfileScreen extends StatelessWidget {
       leading: icon,
       title: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w400,
+          color: color,
         ),
       ),
-      trailing: const Icon(
+      trailing: Icon(
         Icons.keyboard_arrow_right,
         size: 18,
+        color: color,
       ),
     );
   }

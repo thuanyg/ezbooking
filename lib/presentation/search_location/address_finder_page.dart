@@ -9,7 +9,6 @@ import 'package:ezbooking/core/config/app_colors.dart';
 import 'package:ezbooking/core/services/google_map_service.dart';
 import 'package:ezbooking/core/utils/dialogs.dart';
 import 'package:ezbooking/data/models/location_result.dart';
-import 'package:ezbooking/main.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/get_location_bloc.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/location_state.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +16,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:lottie/lottie.dart' as lottie;
 
 class AddressFinderPage extends StatefulWidget {
   static String routeName = "AddressFinderPage";
@@ -52,10 +52,10 @@ class _AddressFinderPageState extends State<AddressFinderPage> {
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
-
         // If permission denied & user selected address => show selected address
         if (locationBloc.locationResult != null &&
             locationBloc.locationResult!.position != null) {
+
           _center = LatLng(
             locationBloc.locationResult!.position!.latitude,
             locationBloc.locationResult!.position!.longitude,
@@ -78,33 +78,62 @@ class _AddressFinderPageState extends State<AddressFinderPage> {
 
           selectedAddress = currentAddress;
         }
+        return;
       }
+      // Location permission allowed
+      if (locationBloc.locationResult != null) {
+        _center = LatLng(
+          locationBloc.locationResult!.position!.latitude,
+          locationBloc.locationResult!.position!.longitude,
+        );
 
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
+        String? currentAddress = await _mapService.getFullAddress(
+          lat: locationBloc.locationResult!.position!.latitude,
+          long: locationBloc.locationResult!.position!.longitude,
+        );
 
-      String? currentAddress = await _mapService.getFullAddress(
-          lat: position.latitude, long: position.longitude);
+        setState(() {
+          _markers.add(
+            Marker(
+              markerId: const MarkerId('SomeId'),
+              position: _center,
+              icon: BitmapDescriptor.defaultMarker,
+              infoWindow: InfoWindow(title: currentAddress ?? "Current Address"),
+            ),
+          );
 
-      setState(() {
-        _center = LatLng(position.latitude, position.longitude);
+          selectedAddress = currentAddress;
+          isLoading = false;
+        });
 
-        _markers.add(Marker(
-            markerId: const MarkerId('SomeId'),
-            position: _center,
-            icon: BitmapDescriptor.defaultMarker,
-            infoWindow:
-                InfoWindow(title: currentAddress ?? "Current Address")));
-        isLoading = false;
-      });
 
-      await _getAddressFromLatLng(_center);
+      } else {
+        Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+        );
 
-      _locationResult = LocationResult(
-        address: currentAddress,
-        position: position,
-      );
+        String? currentAddress = await _mapService.getFullAddress(
+            lat: position.latitude, long: position.longitude);
+
+        setState(() {
+          _center = LatLng(position.latitude, position.longitude);
+
+          _markers.add(Marker(
+              markerId: const MarkerId('SomeId'),
+              position: _center,
+              icon: BitmapDescriptor.defaultMarker,
+              infoWindow:
+                  InfoWindow(title: currentAddress ?? "Current Address")));
+          isLoading = false;
+        });
+
+        await _getAddressFromLatLng(_center);
+
+        _locationResult = LocationResult(
+          address: currentAddress,
+          position: position,
+        );
+      }
     } catch (e) {
       print('Error getting location: $e');
       setState(() {
@@ -187,23 +216,30 @@ class _AddressFinderPageState extends State<AddressFinderPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Address'),
+          title: const Text('My Location'),
           actions: [
             IconButton(
               onPressed: () {
-                if(_locationResult != null){
+                if (_locationResult != null) {
                   context.read<GetLocationBloc>().emitLocation(_locationResult);
                 }
               },
-              icon: _locationResult != null ? Icon(
-                Icons.done,
-                color: AppColors.primaryColor,
-              ) : const SizedBox.shrink(),
+              icon: _locationResult != null
+                  ? Icon(
+                      Icons.done,
+                      color: AppColors.primaryColor,
+                    )
+                  : const SizedBox.shrink(),
             ),
           ],
         ),
         body: isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? Center(
+                child: lottie.Lottie.asset(
+                  "assets/animations/loading.json",
+                  height: 80,
+                ),
+              )
             : Column(
                 children: [
                   Padding(
@@ -211,22 +247,59 @@ class _AddressFinderPageState extends State<AddressFinderPage> {
                     child: TextField(
                       controller: searchController,
                       decoration: InputDecoration(
-                        hintText: 'Search location',
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.search),
-                          onPressed: () {
-                            if (searchController.text.isNotEmpty) {
-                              _searchPlace(searchController.text);
-                            }
-                          },
-                        ),
-                        border: const OutlineInputBorder(),
-                      ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 14,
+                          ),
+                          hintText: 'Search location',
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.search),
+                            onPressed: () {
+                              if (searchController.text.isNotEmpty) {
+                                _searchPlace(searchController.text);
+                              }
+                            },
+                          ),
+                          border: MaterialStateOutlineInputBorder.resolveWith(
+                            (states) {
+                              return OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(
+                                  color: Colors.grey,
+                                  width: .3,
+                                ),
+                              );
+                            },
+                          )),
                       onSubmitted: (value) {
                         if (value.isNotEmpty) {
                           _searchPlace(value);
                         }
                       },
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    color: Colors.white,
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          color: AppColors.primaryColor,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            selectedAddress ?? "No location was chosen!",
+                            maxLines: 2,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 16,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   Expanded(
@@ -251,24 +324,6 @@ class _AddressFinderPageState extends State<AddressFinderPage> {
                       markers: Set<Marker>.of(_markers),
                       myLocationEnabled: true,
                       myLocationButtonEnabled: true,
-                    ),
-                  ),
-                  Container(
-                    padding: EdgeInsets.all(16),
-                    color: Colors.white,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Selected Address:',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(selectedAddress ?? "No location was chosen!"),
-                      ],
                     ),
                   ),
                 ],
