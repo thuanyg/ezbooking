@@ -2,7 +2,11 @@ import 'dart:io';
 
 import 'package:animated_bottom_navigation_bar/animated_bottom_navigation_bar.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:ezbooking/core/utils/utils.dart';
+import 'package:ezbooking/core/utils/dialogs.dart';
+import 'package:ezbooking/presentation/contact_us/contact_us_page.dart';
+import 'package:ezbooking/presentation/helps_qa/helps_qa_page.dart';
+import 'package:ezbooking/presentation/pages/event/favorite_event_page.dart';
+import 'package:ezbooking/presentation/pages/login/login_page.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/get_location_bloc.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/location_state.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_bloc.dart';
@@ -99,6 +103,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: BlocBuilder(
         bloc: locationBloc,
         builder: (context, state) {
@@ -174,11 +179,59 @@ class _HomePageState extends State<HomePage> {
                               physics: const NeverScrollableScrollPhysics(),
                               itemBuilder: (context, index) {
                                 return InkWell(
-                                  onTap: () {},
+                                  onTap: () {
+                                    switch (index) {
+                                      case 0:
+                                      case 1:
+                                      case 2:
+                                        Navigator.pushNamed(context,
+                                            FavoritesEventsPage.routeName);
+                                      case 3:
+                                        Navigator.pushNamed(context,
+                                            ContactUsPage.routeName);
+                                      case 4:
+                                        Navigator.pop(context);
+                                        setState(() {
+                                          _tabSelectedIndex = 3;
+                                          _pageViewController.animateToPage(
+                                            3,
+                                            duration: const Duration(milliseconds: 300),
+                                            curve: Easing.standard,
+                                          );
+                                        });
+                                      case 5:
+                                        Navigator.pushNamed(context,
+                                            HelpAndQAPage.routeName);
+                                      case 6:
+                                        DialogUtils.showConfirmationDialog(
+                                          context: context,
+                                          title: "Are you certain you want to sign out?",
+                                          textCancelButton: "Cancel",
+                                          textAcceptButton: "Logout",
+                                          acceptPressed: () async {
+                                            DialogUtils.showLoadingDialog(context);
+                                            await FirebaseAuth.instance.signOut();
+                                            BlocProvider.of<UserInfoBloc>(context).reset();
+                                            await Future.delayed(
+                                              const Duration(milliseconds: 800),
+                                                  () {
+                                                Navigator.pushNamedAndRemoveUntil(
+                                                  context,
+                                                  LoginPage.routeName,
+                                                      (route) => false,
+                                                );
+                                              },
+                                            );
+                                          },
+                                        );
+                                    }
+                                  },
                                   child: ListTile(
                                     leading: ImageHelper.loadAssetImage(
                                         drawerItems[index].icon),
-                                    title: Text(drawerItems[index].label),
+                                    title: Text(
+                                      drawerItems[index].label,
+                                    ),
                                   ),
                                 );
                               },
@@ -192,7 +245,7 @@ class _HomePageState extends State<HomePage> {
                   controller: _pageViewController,
                   scrollDirection: Axis.horizontal,
                   physics: const NeverScrollableScrollPhysics(),
-                  children: [
+                  children: const [
                     ExploreScreen(),
                     EventScreen(),
                     TicketScreen(),

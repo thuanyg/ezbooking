@@ -1,10 +1,16 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ezbooking/core/config/app_styles.dart';
+import 'package:ezbooking/core/utils/utils.dart';
 import 'package:ezbooking/data/models/event.dart';
 import 'package:ezbooking/presentation/pages/event/event_detail.dart';
+import 'package:ezbooking/presentation/pages/maps/bloc/get_location_bloc.dart';
 import 'package:ezbooking/presentation/widgets/cards.dart';
 import 'package:firebase_ui_firestore/firebase_ui_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 
@@ -43,14 +49,67 @@ class _EventUpComingPageState extends State<EventUpComingPage>
   }
 
   Widget _buildEventList() {
-    final eventsQuery = FirebaseFirestore.instance
-        .collection('events')
-        .where("date", isGreaterThan: Timestamp.now())
-        .orderBy('date', descending: true)
-        .withConverter<Event>(
-          fromFirestore: (snapshot, _) => Event.fromJson(snapshot.data()!),
-          toFirestore: (event, _) => event.toMap(),
-        );
+    Query<Event> eventsQuery;
+
+    final getLocationBloc = BlocProvider.of<GetLocationBloc>(context);
+    final currentPosition = getLocationBloc.locationResult?.position;
+
+    if (currentPosition != null) {
+      // Kiểm tra và đổi vị trí nếu latitude > 90
+      double latitude = currentPosition.latitude;
+      double longitude = currentPosition.longitude;
+      if (latitude > 90) {
+        final temp = latitude;
+        latitude = longitude;
+        longitude = temp;
+      }
+
+      const double earthRadiusKm = 6371.0;
+      const double radiusInKm = 1000; // Bán kính 100km
+
+// Tính toán bounding box với hệ số điều chỉnh
+      double latKmRatio = 1 / 111.0; // 1 độ latitude ≈ 111km
+      double lngKmRatio =
+          1 / (111.0 * cos(latitude * pi / 180.0)); // Điều chỉnh theo latitude
+
+// Tính delta cho latitude và longitude
+      double latDelta = radiusInKm * latKmRatio * 1.2; // Thêm 20% margin
+      double lngDelta = radiusInKm * lngKmRatio * 1.2;
+
+// Tính bounds
+      double minLat = latitude - latDelta;
+      double maxLat = latitude + latDelta;
+      double minLng = longitude - lngDelta;
+      double maxLng = longitude + lngDelta;
+
+// Debug logs
+      print("Search center: $latitude, $longitude");
+      print("Radius: ${radiusInKm}km");
+      print(
+          "Latitude range: $minLat to $maxLat (delta: ${maxLat - minLat} degrees)");
+      print(
+          "Longitude range: $minLng to $maxLng (delta: ${maxLng - minLng} degrees)");
+      final now = Timestamp.now();
+      eventsQuery = FirebaseFirestore.instance
+          .collection('events')
+          .where("date", isGreaterThan: now)
+          .where("geopoint", isGreaterThanOrEqualTo: GeoPoint(minLat, minLng))
+          .where("geopoint", isLessThanOrEqualTo: GeoPoint(maxLat, maxLng))
+          .orderBy('date', descending: false)
+          .withConverter<Event>(
+            fromFirestore: (snapshot, _) => Event.fromJson(snapshot.data()!),
+            toFirestore: (event, _) => event.toMap(),
+          );
+    } else {
+      eventsQuery = FirebaseFirestore.instance
+          .collection('events')
+          .where("date", isGreaterThan: Timestamp.now())
+          .orderBy('date', descending: false)
+          .withConverter<Event>(
+            fromFirestore: (snapshot, _) => Event.fromJson(snapshot.data()!),
+            toFirestore: (event, _) => event.toMap(),
+          );
+    }
 
     return FirestoreListView<Event>(
       query: eventsQuery,
@@ -78,8 +137,21 @@ class _EventUpComingPageState extends State<EventUpComingPage>
       },
       itemBuilder: (context, snapshot) {
         final event = snapshot.data();
+
+        double distance = 0.0;
+
+        if (currentPosition != null) {
+          distance = Geolocator.distanceBetween(
+            currentPosition.latitude,
+            currentPosition.longitude,
+            event.geoPoint!.latitude,
+            event.geoPoint!.longitude,
+          );
+        }
         return EventStandardCard(
-          distance: "1.2km",
+          distance: currentPosition != null
+              ? '${AppUtils.convertMetersToKilometers(distance)} km'
+              : "",
           title: event.name,
           date: DateFormat('EEE, MMM d - yyyy • h:mm a').format(event.date),
           imageLink: event.poster ?? "",
@@ -97,61 +169,12 @@ class _EventUpComingPageState extends State<EventUpComingPage>
 
   AppBar _buildAppBar(BuildContext context) {
     return AppBar(
-      automaticallyImplyLeading: false,
-      title: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          "Upcoming events",
-          style: AppStyles.titleAppBar,
-        ),
+      title: Text(
+        "Upcoming events",
+        style: AppStyles.titleAppBar,
       ),
       centerTitle: true,
-      actions: [
-        _buildSearchField(),
-        if (isSearchEnabled)
-          IconButton(
-            onPressed: () {
-              setState(() {
-                isSearchEnabled = false;
-                searchEventController.clear();
-              });
-            },
-            icon: const Icon(Icons.cancel),
-          ),
-        if (!isSearchEnabled)
-          IconButton(
-            onPressed: () {
-              setState(() {
-                isSearchEnabled = true;
-              });
-            },
-            icon: const Icon(Icons.search),
-          ),
-      ],
     );
-  }
-
-  Widget _buildSearchField() {
-    return isSearchEnabled
-        ? SizedBox(
-            width: MediaQuery.of(context).size.width * 0.55,
-            height: 44,
-            child: TextField(
-              autofocus: true,
-              controller: searchEventController,
-              style: const TextStyle(fontSize: 16.0, color: Colors.black),
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                hintText: "Search event...",
-              ),
-              onChanged: (value) {
-                // Implement search functionality here
-              },
-            ),
-          )
-        : const SizedBox.shrink();
   }
 
   @override

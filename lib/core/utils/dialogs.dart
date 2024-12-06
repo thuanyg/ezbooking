@@ -9,25 +9,95 @@ class DialogUtils {
       context: context,
       barrierDismissible: false,
       builder: (context) {
-        return Center(
-          child: Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              color: Colors.black54,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Center(
-              child: Lottie.asset(
-                '${assetAnimationLink}loading.json',
-                width: 80,
-                fit: BoxFit.cover,
+        return WillPopScope(
+          onWillPop: () async => false,
+          child: Center(
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Center(
+                child: Lottie.asset(
+                  '${assetAnimationLink}loading.json',
+                  width: 80,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
           ),
         );
       },
     );
+  }
+
+  static void showWarningDialog({
+    required BuildContext context,
+    required String title,
+    bool canDismissible = true,
+    required VoidCallback onClickOutSide,
+  }) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: canDismissible,
+      barrierLabel: '',
+      pageBuilder: (BuildContext context, _, __) {
+        return Container(
+          margin: const EdgeInsets.only(left: 12, right: 12),
+          alignment: Alignment.center,
+          child: Material(
+            borderRadius: BorderRadius.circular(14),
+            child: Container(
+              height: 175,
+              width: MediaQuery.of(context).size.width,
+              padding: const EdgeInsets.symmetric(
+                vertical: 16,
+                horizontal: 28,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    height: 60,
+                    width: 60,
+                    child: Lottie.asset(
+                      "${assetAnimationLink}warning.json",
+                      height: 60,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.center,
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontFamily: "BeVietnam",
+                        color: Color(0xff1b1e25),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w300,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    ).then((value) {
+      // ìf click outside => value = null
+      if (value == null) {
+        onClickOutSide();
+      }
+    });
   }
 
   static void showConfirmationDialog({

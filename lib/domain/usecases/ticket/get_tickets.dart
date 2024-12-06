@@ -7,8 +7,8 @@ class GetTicketsUseCase {
 
   GetTicketsUseCase(this.repository);
 
-  Future<List<Ticket>> getTicketsOfUser(String userID) async {
-    return await repository.fetchTicketOfUser(userID);
+  Stream<Ticket> getTicketByID(String ticketID) {
+    return repository.fetchTicket(ticketID);
   }
 
   Stream<List<TicketEntity>> getTicketEntitiesOfUser(String userID) {

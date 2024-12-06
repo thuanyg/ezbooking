@@ -22,10 +22,10 @@ class UpcomingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 255,
+      height: 240,
       width: 237,
       decoration: BoxDecoration(
-        color: const Color(0xffefefff),
+        color: const Color(0xfff6fbff),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Padding(
@@ -37,7 +37,7 @@ class UpcomingCard extends StatelessWidget {
                 ImageHelper.loadNetworkImage(
                   imageLink,
                   radius: BorderRadius.circular(6),
-                  height: 145,
+                  height: 155,
                   width: 230,
                   fit: BoxFit.fill,
                 ),
@@ -73,7 +73,7 @@ class UpcomingCard extends StatelessWidget {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
                   child: Text(
                     title,
                     style: AppStyles.title1,
@@ -86,7 +86,7 @@ class UpcomingCard extends StatelessWidget {
             ),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 6),
                 child: Row(
                   children: [
                     ImageHelper.loadAssetImage(
@@ -153,7 +153,7 @@ class PopularCard extends StatelessWidget {
         height: 100,
         width: size.width * 0.7,
         decoration: BoxDecoration(
-          color: const Color(0xffefefff),
+          color: const Color(0xfff6fbff),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Padding(

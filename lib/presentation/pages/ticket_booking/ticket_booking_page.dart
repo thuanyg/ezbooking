@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart' as cf;
 import 'package:ezbooking/core/config/app_colors.dart';
 import 'package:ezbooking/core/config/constants.dart';
+import 'package:ezbooking/core/utils/dialogs.dart';
 import 'package:ezbooking/core/utils/utils.dart';
 import 'package:ezbooking/data/models/event.dart';
 import 'package:ezbooking/presentation/pages/ticket_booking/bloc/orders/create_order_bloc.dart';
+import 'package:ezbooking/presentation/pages/ticket_booking/payment_page.dart';
 import 'package:ezbooking/presentation/pages/ticket_booking/payment_success_page.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_bloc.dart';
 import 'package:ezbooking/data/models/order.dart';
@@ -231,7 +233,22 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                       textButton: "Continue",
                       iconName: "ic_button_next.png",
                       onTap: () {
-                        // DialogUtils.showLoadingDialog(context);
+                        order = Order(
+                          id: AppUtils.generateRandomString(6),
+                          eventID: event?.id ?? "",
+                          status: "success",
+                          createdAt: cf.Timestamp.now(),
+                          ticketPrice: event!.ticketPrice,
+                          ticketQuantity: int.parse(quantityController.text),
+                          userID: FirebaseAuth.instance.currentUser!.uid,
+                          orderType: 'Online',
+                        );
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (context) => const PaymentPage(),
+                          settings: RouteSettings(arguments: order)
+                        ));
+                        return;
+                        DialogUtils.showLoadingDialog(context);
                         // Success payment
                         order = Order(
                           id: AppUtils.generateRandomString(6),
@@ -284,7 +301,7 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                                             OrderCreationStatus.success) {
                                           await Future.delayed(
                                             const Duration(milliseconds: 1500),
-                                                () {
+                                            () {
                                               Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
@@ -292,7 +309,8 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                                                       PaymentSuccessPage(
                                                     order: order!,
                                                     event: event!,
-                                                    tickets: createOrderBloc.ticketsBought,
+                                                    tickets: createOrderBloc
+                                                        .ticketsBought,
                                                   ),
                                                 ),
                                               );
@@ -446,36 +464,6 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                         );
                       },
                     ),
-                    // BlocListener(
-                    //   bloc: createOrderBloc,
-                    //   listener: (context, state) {
-                    //     if (state is CreateOrderSuccess) {
-                    //       isOrderCreated = true;
-                    //     }
-                    //   },
-                    //   child: BlocListener(
-                    //     bloc: createTicketBloc,
-                    //     listener: (context, state) {
-                    //       if (state is CreateTicketSuccess) {
-                    //         if (isOrderCreated) {
-                    //           print(isOrderCreated);
-                    //           Navigator.pop(context);
-                    //           Navigator.push(
-                    //             context,
-                    //             MaterialPageRoute(
-                    //               builder: (context) => PaymentSuccessPage(
-                    //                 order: order!,
-                    //                 event: event!,
-                    //                 tickets: tickets,
-                    //               ),
-                    //             ),
-                    //           );
-                    //         }
-                    //       }
-                    //     },
-                    //     child: Container(),
-                    //   ),
-                    // ),
                   ],
                 );
               }

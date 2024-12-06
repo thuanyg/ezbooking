@@ -10,6 +10,7 @@ class Organizer {
   String? website;
   String? avatarUrl;
   Timestamp? createdAt;
+  bool isDelete;
 
   Organizer({
     this.id,
@@ -21,6 +22,7 @@ class Organizer {
     this.website,
     this.avatarUrl,
     this.createdAt,
+    required this.isDelete,
   });
 
   factory Organizer.fromJson(Map<String, dynamic> json) {
@@ -34,7 +36,7 @@ class Organizer {
       website: json['website'] as String?,
       avatarUrl: json['avatarUrl'] as String?,
       createdAt: json['createdAt'] as Timestamp?,
+      isDelete: json['isDelete'] as bool,
     );
   }
-
 }

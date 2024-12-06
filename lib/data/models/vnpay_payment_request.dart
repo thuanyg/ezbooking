@@ -34,8 +34,9 @@ class VnPayPaymentRequest {
 
   static String generatePaymentUrl(VnPayPaymentRequest paymentRequest) {
     final amount =
-        (double.parse(paymentRequest.vnpAmount) * 100).round().toString();
+    (double.parse(paymentRequest.vnpAmount) * 100).round().toString();
 
+    // Khởi tạo tham số
     final Map<String, String> vnpParams = {
       'vnp_Amount': amount,
       'vnp_Command': vnpCommand,
@@ -49,32 +50,34 @@ class VnPayPaymentRequest {
       'vnp_TmnCode': vnpTmnCode,
       'vnp_TxnRef': paymentRequest.vnpTxnRef,
       'vnp_Version': vnpVersion,
-      'vnp_BankCode': "",
+      if (vnpBankCode != null) 'vnp_BankCode': vnpBankCode!,
     };
 
     // Sắp xếp các tham số theo thứ tự a-z
     final List<String> fieldNames = vnpParams.keys.toList()..sort();
 
-    // Tạo chuỗi hash data theo đúng format của VNPay
+    // Tạo chuỗi hash data
     final StringBuffer hashData = StringBuffer();
     for (var fieldName in fieldNames) {
-      if (vnpParams[fieldName]!.isNotEmpty) {
+      final value = vnpParams[fieldName];
+      if (value!.isNotEmpty) {
         if (hashData.isNotEmpty) {
           hashData.write('&');
         }
-        hashData
-            .write('$fieldName=${Uri.encodeComponent(vnpParams[fieldName]!)}');
+        hashData.write('$fieldName=${Uri.encodeComponent(value)}');
       }
     }
 
     // Tạo chuỗi ký tự cần ký
     final String signData = hashData.toString();
-    print(hashData);
+    print('Hash Data: $signData');
 
     // Tạo chữ ký HMAC-SHA512
     final vnpSecureHash = Hmac(sha512, utf8.encode(vnpHashSecret))
         .convert(utf8.encode(signData))
         .toString();
+
+    print('Generated Secure Hash: $vnpSecureHash');
 
     // Thêm secure hash vào params
     vnpParams['vnp_SecureHash'] = vnpSecureHash;
@@ -83,14 +86,11 @@ class VnPayPaymentRequest {
     final StringBuffer queryUrl = StringBuffer('$vnpUrl?');
     vnpParams.forEach((key, value) {
       if (value.isNotEmpty) {
-        if (!queryUrl.toString().endsWith('?')) {
-          queryUrl.write('&');
-        }
-        queryUrl.write('$key=${Uri.encodeComponent(value)}');
+        queryUrl.write('&$key=${Uri.encodeComponent(value)}');
       }
     });
 
-    print(queryUrl);
+    print('Payment URL: $queryUrl');
 
     return queryUrl.toString();
   }

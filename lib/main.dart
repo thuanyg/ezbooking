@@ -2,10 +2,14 @@ import 'package:ezbooking/injection_container.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/comment_bloc.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/event_detail_bloc.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/favorite_bloc.dart';
+import 'package:ezbooking/presentation/pages/event/bloc/fetch_available_ticket_cubit.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/fetch_comment_bloc.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/fetch_favorite_bloc.dart';
+import 'package:ezbooking/presentation/pages/event/bloc/going_event_cubit.dart';
 import 'package:ezbooking/presentation/pages/login/bloc/login_bloc.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/get_location_bloc.dart';
+import 'package:ezbooking/presentation/pages/organizer/bloc/events_organizer_bloc.dart';
+import 'package:ezbooking/presentation/pages/organizer/bloc/organizer_bloc.dart';
 import 'package:ezbooking/presentation/pages/signup/bloc/signup_bloc.dart';
 import 'package:ezbooking/presentation/pages/splash/splash_page.dart';
 import 'package:ezbooking/presentation/pages/ticket_booking/bloc/orders/create_order_bloc.dart';
@@ -13,13 +17,16 @@ import 'package:ezbooking/presentation/pages/user_profile/bloc/update_user_bloc.
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/filter/filter_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/latest/latest_event_bloc.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/organizer/organizer_list_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/popular/popular_event_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/upcoming/upcoming_event_bloc.dart';
+import 'package:ezbooking/presentation/screens/ticket/bloc/get_ticket_cubit.dart';
 import 'package:ezbooking/presentation/screens/ticket/bloc/get_tickets_bloc.dart';
 import 'package:ezbooking/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get/get_navigation/src/root/get_material_app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,6 +53,12 @@ void main() async {
         BlocProvider(create: (_) => sl<CommentBloc>()),
         BlocProvider(create: (_) => sl<CreateOrderBloc>()),
         BlocProvider(create: (_) => sl<GetTicketsBloc>()),
+        BlocProvider(create: (_) => sl<GetTicketCubit>()),
+        BlocProvider(create: (_) => sl<GoingEventCubit>()),
+        BlocProvider(create: (_) => sl<FetchAvailableTicketCubit>()),
+        BlocProvider(create: (_) => sl<OrganizerBloc>()),
+        BlocProvider(create: (_) => sl<EventsOrganizerBloc>()),
+        BlocProvider(create: (_) => sl<OrganizerListBloc>()),
       ],
       child: const MyApp(),
     ),
@@ -57,7 +70,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp (
       debugShowCheckedModeBanner: false,
       title: 'EzBooking',
       theme: ThemeData(

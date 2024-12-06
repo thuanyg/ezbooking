@@ -6,6 +6,7 @@ import 'package:ezbooking/core/utils/utils.dart';
 import 'package:ezbooking/data/datasources/events/event_datasource.dart';
 import 'package:ezbooking/data/models/comment.dart';
 import 'package:ezbooking/data/models/event.dart';
+import 'package:ezbooking/data/models/going.dart';
 import 'package:ezbooking/data/models/organizer.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -398,6 +399,96 @@ class EventDatasourceImpl extends EventDatasource {
   Future<List<Event>> fetchPopularEventsSortedByProximity(
       {required int limit, required Position currentPosition}) async {
     // TODO: implement fetchPopularEventsSortedByProximity
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Going> fetchGoingEvent(String eventID) async {
+    try {
+      // Get count of users who placed an order for this event
+      final countSnapshot = await FirebaseFirestore.instance
+          .collection('orders')
+          .where('eventID', isEqualTo: eventID)
+          .count()
+          .get();
+
+      final count = countSnapshot.count ?? 0; // Get the number of participants
+
+      // Fetch only the 3 most recent orders for the given eventID
+      final orderQuerySnapshot = await FirebaseFirestore.instance
+          .collection('orders')
+          .where('eventID', isEqualTo: eventID)
+          .orderBy('createdAt', descending: true) // Order by creation time
+          .limit(3) // Limit to the 3 most recent
+          .get();
+
+      // Initialize a list to store avatar URLs
+      List<String> avatarUrls = [];
+
+      // Loop through the orders to get user avatars
+      for (var doc in orderQuerySnapshot.docs) {
+        final orderData = doc.data();
+        final userID =
+            orderData['userID']; // Assuming userID is stored in the order
+
+        // Fetch user data to get the avatar URL
+        final userDocSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userID)
+            .get();
+
+        if (userDocSnapshot.exists) {
+          final userData = userDocSnapshot.data();
+          final avatarUrl = userData?['avatarUrl'];
+          if (avatarUrl != null && !avatarUrls.contains(avatarUrl)) {
+            avatarUrls.add(avatarUrl);
+          }
+        }
+      }
+
+      // Return the Going object with the number of participants and the avatar URLs
+      return Going(count, avatarUrls);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  @override
+  Stream<int> getTicketAvailable(String eventID) {
+    return FirebaseFirestore.instance
+        .collection("events")
+        .doc(eventID)
+        .snapshots()
+        .map((snapshot) {
+      if (snapshot.exists) {
+        final data = snapshot.data();
+        if (data != null && data['availableTickets'] is int) {
+          return data['availableTickets'] as int;
+        }
+      }
+      return 0; // Default to 0 if data is missing or invalid
+    });
+  }
+
+  @override
+  Future<List<Event>> fetchEventsOfOrganizer(String organizerID) async {
+    try {
+      final docs = await FirebaseFirestore.instance
+          .collection('events')
+          .where('organizer', isEqualTo: organizerID)
+          .get();
+
+      final events = docs.docs.map((doc) => Event.fromJson(doc.data())).toList();
+      return events;
+    } catch (e) {
+      print("Error fetching events: $e");
+      throw Exception("Failed to fetch events for organizer $organizerID");
+    }
+  }
+
+  @override
+  Future<List<Event>> fetchEventsByCategory(category) async {
+    // TODO: implement fetchEventsByCategory
     throw UnimplementedError();
   }
 

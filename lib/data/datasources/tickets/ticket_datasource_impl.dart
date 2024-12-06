@@ -20,27 +20,6 @@ class TicketDatasourceImpl extends TicketDatasource {
   }
 
   @override
-  Future<List<Ticket>> fetchTicketOfUser(String userID) async {
-    try {
-      // Truy vấn Firestore để lấy các vé của người dùng có userID
-      final querySnapshot = await firebaseFirestore
-          .collection('tickets')
-          .where('userID', isEqualTo: userID)
-          .orderBy('createdAt', descending: true)
-          .get();
-
-      // Chuyển đổi dữ liệu Firestore thành danh sách các vé
-      final tickets = querySnapshot.docs.map((doc) {
-        return Ticket.fromFirestore(doc.data(), doc.id);
-      }).toList();
-
-      return tickets;
-    } catch (e) {
-      throw Exception('Failed to fetch tickets for user: $e');
-    }
-  }
-
-  @override
   Stream<List<TicketEntity>> fetchTicketEntitiesOfUser(String userID) {
     return firebaseFirestore
         .collection('tickets')
@@ -60,7 +39,8 @@ class TicketDatasourceImpl extends TicketDatasource {
               .get();
 
           if (eventDoc.exists) {
-            final event = Event.fromJson(eventDoc.data() as Map<String, dynamic>);
+            final event =
+                Event.fromJson(eventDoc.data() as Map<String, dynamic>);
             return TicketEntity(ticket, event);
           } else {
             return null; // Bỏ qua nếu không tìm thấy sự kiện
@@ -73,6 +53,23 @@ class TicketDatasourceImpl extends TicketDatasource {
     });
   }
 
-
-
+  @override
+  Stream<Ticket> fetchTicket(String ticketID) {
+    try {
+      return firebaseFirestore
+          .collection('tickets')
+          .doc(ticketID)
+          .snapshots()
+          .map((documentSnapshot) {
+        if (documentSnapshot.exists) {
+          return Ticket.fromFirestore(
+              documentSnapshot.data()!, documentSnapshot.id);
+        } else {
+          throw Exception('Ticket not found');
+        }
+      });
+    } catch (e) {
+      throw Exception('Failed to fetch ticket: $e');
+    }
+  }
 }

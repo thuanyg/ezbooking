@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ezbooking/core/config/app_colors.dart';
 import 'package:ezbooking/core/config/app_styles.dart';
 import 'package:ezbooking/core/utils/dialogs.dart';
 import 'package:ezbooking/core/utils/utils.dart';
@@ -44,7 +45,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
     updateUserBloc = BlocProvider.of<UpdateUserBloc>(context);
   }
 
-  uploadImage() async {
+  Future<void> uploadImage(XFile pickedImage) async {
     DialogUtils.showLoadingDialog(context);
 
     final user = userInfoBloc.user;
@@ -52,12 +53,11 @@ class _MyProfilePageState extends State<MyProfilePage> {
     final _storage = FirebaseStorage.instance;
     try {
       String fileName = user!.fullName! + AppUtils.generateRandomString(6);
-      File imageFile = File(pickedImage!.path);
+      File imageFile = File(pickedImage.path);
 
       // Upload image to Firebase Storage
-      UploadTask uploadTask = _storage
-          .ref('images/avatars/$fileName')
-          .putFile(imageFile);
+      UploadTask uploadTask =
+          _storage.ref('images/avatars/$fileName').putFile(imageFile);
 
       // Wait for the upload to complete
       TaskSnapshot snapshot = await uploadTask;
@@ -71,14 +71,17 @@ class _MyProfilePageState extends State<MyProfilePage> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Image uploaded successfully!")),
+        SnackBar(
+          content: const Text("Image uploaded successfully!"),
+          backgroundColor: AppColors.primaryColor,
+        ),
       );
 
       userInfoBloc.add(FetchUserInfo(user.id!));
     } catch (e) {
       print("Error uploading image: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error uploading image!")),
+        const SnackBar(content: Text("Error uploading image!")),
       );
     } finally {
       DialogUtils.hide(context);
@@ -130,10 +133,10 @@ class _MyProfilePageState extends State<MyProfilePage> {
                           final XFile? image = await imagePicker.pickImage(
                               source: ImageSource.gallery);
                           if (image == null) return;
+                          await uploadImage(image);
                           setState(() {
                             pickedImage = image;
                           });
-                          uploadImage();
                         },
                         child: pickedImage != null
                             ? CircleAvatar(
@@ -142,10 +145,10 @@ class _MyProfilePageState extends State<MyProfilePage> {
                                   File(pickedImage!.path),
                                 ),
                               )
-                            : const CircleAvatar(
+                            :  CircleAvatar(
                                 radius: 35,
                                 backgroundImage: CachedNetworkImageProvider(
-                                  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQdxLYtLxr2EMj73RfHjJAs_yAL-zcFPwYGLQ&s",
+                                  userInfoBloc.user?.avatarUrl ?? "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQdxLYtLxr2EMj73RfHjJAs_yAL-zcFPwYGLQ&s",
                                   maxWidth: 100,
                                   maxHeight: 100,
                                 ),

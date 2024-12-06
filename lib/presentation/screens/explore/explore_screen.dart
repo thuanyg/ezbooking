@@ -9,11 +9,13 @@ import 'package:ezbooking/presentation/pages/maps/bloc/location_state.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/filter/filter_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/filter/filter_event.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/latest/latest_event_bloc.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/organizer/organizer_list_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/popular/popular_event_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/popular/popular_event_event.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/upcoming/upcoming_event_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/upcoming/upcoming_event_event.dart';
 import 'package:ezbooking/presentation/screens/explore/widgets/latest_event.dart';
+import 'package:ezbooking/presentation/screens/explore/widgets/organizer_list.dart';
 import 'package:ezbooking/presentation/screens/explore/widgets/popular_event.dart';
 import 'package:ezbooking/presentation/screens/explore/widgets/up_coming_event.dart';
 import 'package:ezbooking/presentation/search_location/address_finder_page.dart';
@@ -38,6 +40,7 @@ class _ExploreScreenState extends State<ExploreScreen>
   late final LatestEventBloc latestEventBloc;
   late final PopularEventBloc popularEventBloc;
   late final GetLocationBloc locationBloc;
+  late final OrganizerListBloc organizerListBloc;
 
   @override
   void initState() {
@@ -47,8 +50,10 @@ class _ExploreScreenState extends State<ExploreScreen>
     latestEventBloc = BlocProvider.of<LatestEventBloc>(context);
     filterBloc = BlocProvider.of<FilterBloc>(context);
     popularEventBloc = BlocProvider.of<PopularEventBloc>(context);
+    organizerListBloc = BlocProvider.of<OrganizerListBloc>(context);
 
     // Fetch Data Initial
+    organizerListBloc.fetchOrganizers();
     if (locationBloc.locationResult == null) {
       upcomingEventBloc.add(FetchUpcomingEvent(
         limit: 10,
@@ -121,6 +126,8 @@ class _ExploreScreenState extends State<ExploreScreen>
         children: [
           UpComingEvent(),
           SizedBox(height: 16),
+          OrganizerList(),
+          SizedBox(height: 16),
           PopularEvent(),
           SizedBox(height: 16),
           LatestEvent(),
@@ -155,11 +162,14 @@ class _ExploreScreenState extends State<ExploreScreen>
               color: Colors.white,
             ),
             const SizedBox(width: 8),
-            const Expanded(
+            Expanded(
               child: TextField(
-                style: TextStyle(color: Colors.white),
+                style: const TextStyle(color: Colors.white),
                 cursorColor: Colors.white,
-                decoration: InputDecoration(
+                onSubmitted: (value) {
+
+                },
+                decoration: const InputDecoration(
                   hintText: "Search...",
                   border: InputBorder.none,
                   hintStyle: TextStyle(color: Colors.white),
@@ -178,7 +188,7 @@ class _ExploreScreenState extends State<ExploreScreen>
                         const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(50),
-                      color: const Color(0xFF5D56F3),
+                      color: AppColors.backgroundColor,
                     ),
                     child: Row(
                       children: [
@@ -187,12 +197,12 @@ class _ExploreScreenState extends State<ExploreScreen>
                               ? Icons.filter_alt
                               : Icons.filter_alt_off_rounded,
                           size: 16,
-                          color: Colors.white,
+                          color: Colors.black26,
                         ),
                         const SizedBox(width: 4),
                         const Text(
                           "Filters",
-                          style: TextStyle(color: Colors.white),
+                          style: TextStyle(color: Colors.black54),
                         ),
                       ],
                     ),
@@ -478,7 +488,6 @@ class _ExploreScreenState extends State<ExploreScreen>
       ),
     );
   }
-
 
   @override
   bool get wantKeepAlive => true;

@@ -9,36 +9,25 @@ Widget MainElevatedButton({
   double height = mainButtonHeight,
   String textButton = "",
   String iconName = "",
+  BorderRadius? radius = const BorderRadius.all(Radius.circular(15)),
   Function()? onTap,
 }) {
   return InkWell(
     onTap: onTap,
-    borderRadius: BorderRadius.circular(15),
+    borderRadius: radius,
     child: Container(
       clipBehavior: Clip.antiAlias,
       height: height,
       width: width,
       decoration: BoxDecoration(
         color: AppColors.primaryColor,
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: radius,
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(width: 24.0),
-          Expanded(
-            child: Center(
-              child: Text(
-                textButton,
-                style: AppStyles.button.copyWith(color: Colors.white),
-              ),
-            ),
-          ),
-          iconName != ""
-              ? ImageHelper.loadAssetImage(assetImageLink + iconName)
-              : const SizedBox.shrink(),
-          const SizedBox(width: 8.0),
-        ],
+      child: Center(
+        child: Text(
+          textButton,
+          style: AppStyles.button.copyWith(color: Colors.white),
+        ),
       ),
     ),
   );
@@ -62,23 +51,11 @@ Widget MainOutlineButton(
         border: Border.all(color: AppColors.primaryColor),
         borderRadius: BorderRadius.circular(15),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(width: 16.0),
-          Expanded(
-            child: Center(
-              child: Text(
-                textButton,
-                style: AppStyles.button.copyWith(color: AppColors.primaryColor),
-              ),
-            ),
-          ),
-          iconName != ""
-              ? ImageHelper.loadAssetImage(assetImageLink + iconName)
-              : const SizedBox.shrink(),
-          const SizedBox(width: 8.0),
-        ],
+      child: Center(
+        child: Text(
+          textButton,
+          style: AppStyles.button.copyWith(color: AppColors.primaryColor),
+        ),
       ),
     ),
   );

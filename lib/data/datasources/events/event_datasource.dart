@@ -1,5 +1,6 @@
 import 'package:ezbooking/data/models/comment.dart';
 import 'package:ezbooking/data/models/event.dart';
+import 'package:ezbooking/data/models/going.dart';
 import 'package:geolocator/geolocator.dart';
 
 abstract class EventDatasource {
@@ -7,12 +8,16 @@ abstract class EventDatasource {
 
   Future<List<Event>> fetchEvents({required int limit});
 
+  Future<List<Event>> fetchEventsByCategory(category);
+
   Future<List<Event>> fetchEventsSortedByProximity({
     required int limit,
     required Position currentPosition,
   });
 
   Future<List<Event>> fetchPopularEvents({int? limit});
+
+  Future<List<Event>> fetchEventsOfOrganizer(String organizerID);
 
   Future<List<Event>> fetchPopularEventsSortedByProximity({
     required int limit,
@@ -40,4 +45,8 @@ abstract class EventDatasource {
   // Fetch Comment of event
   Future<List<Comment>> fetchComments(String eventID);
 
+  Future<Going> fetchGoingEvent(String eventID);
+
+  // Counter Ticket Available
+  Stream<int> getTicketAvailable(String eventID);
 }

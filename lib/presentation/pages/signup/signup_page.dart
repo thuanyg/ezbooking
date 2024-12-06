@@ -6,12 +6,9 @@ import 'package:ezbooking/presentation/pages/login/login_page.dart';
 import 'package:ezbooking/presentation/pages/signup/bloc/signup_bloc.dart';
 import 'package:ezbooking/presentation/pages/signup/bloc/signup_event.dart';
 import 'package:ezbooking/presentation/pages/signup/bloc/signup_state.dart';
-import 'package:ezbooking/presentation/pages/verification/verification_page.dart';
 import 'package:ezbooking/core/config/app_colors.dart';
 import 'package:ezbooking/core/config/app_styles.dart';
 import 'package:ezbooking/core/config/app_validate.dart';
-import 'package:ezbooking/core/config/constants.dart';
-import 'package:ezbooking/core/utils/image_helper.dart';
 import 'package:ezbooking/presentation/widgets/auth_with_3rd.dart';
 import 'package:ezbooking/presentation/widgets/button.dart';
 import 'package:ezbooking/presentation/widgets/inputfield.dart';
@@ -21,6 +18,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 class SignupPage extends StatelessWidget {
   SignupPage({super.key});
+
   static String routeName = "/SignInPage";
 
   final _fullNameController = TextEditingController();
@@ -32,16 +30,24 @@ class SignupPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-     appBar: AppBar(),
+      appBar: AppBar(),
       body: BlocListener<SignupBloc, SignupState>(
         listener: (context, state) {
-          if(state is SignupLoading){
+          if (state is SignupLoading) {
             DialogUtils.showLoadingDialog(context);
           }
-          if(state is SignupSuccess){
+          if (state is SignupSuccess) {
             DialogUtils.hide(context);
             FirebaseAuth.instance.signOut();
             Navigator.of(context).pushReplacementNamed(LoginPage.routeName);
+          }
+          if (state is SignupFailure) {
+            DialogUtils.hide(context);
+            FirebaseAuth.instance.signOut();
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(state.error),
+              backgroundColor: AppColors.primaryColor,
+            ));
           }
         },
         child: SingleChildScrollView(
@@ -90,7 +96,8 @@ class SignupPage extends StatelessWidget {
                       obscureText: true,
                       label: "Confirm password",
                       prefixIconName: "ic_lock_outlined.png",
-                      validator: (value) => Validator.validateConfirmPassword(value, _passwordController),
+                      validator: (value) => Validator.validateConfirmPassword(
+                          value, _passwordController),
                     ),
                     const SizedBox(height: 36.0),
                     MainElevatedButton(
@@ -143,7 +150,8 @@ class SignupPage extends StatelessWidget {
                           ),
                           TextButton(
                             onPressed: () {
-                              Navigator.of(context).pushReplacementNamed(LoginPage.routeName);
+                              Navigator.of(context)
+                                  .pushReplacementNamed(LoginPage.routeName);
                             },
                             child: Text(
                               "Sign in",
@@ -171,8 +179,9 @@ class SignupPage extends StatelessWidget {
     String fullName = _fullNameController.text.trim();
     String email = _emailController.text.trim();
     String password = _passwordController.text.trim();
-    if (_signUpFormKey.currentState?.validate()  ?? false) {
-      UserCreation user = UserCreation(fullName: fullName, email: email, password: password);
+    if (_signUpFormKey.currentState?.validate() ?? false) {
+      UserCreation user =
+          UserCreation(fullName: fullName, email: email, password: password);
       BlocProvider.of<SignupBloc>(context).add(SignupSubmitted(user));
     }
   }

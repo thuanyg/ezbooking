@@ -6,6 +6,7 @@ class Event {
   String name;
   String location;
   String eventType;
+  String category;
   String description;
   DateTime date; // Keep this as DateTime
   double ticketPrice;
@@ -21,6 +22,7 @@ class Event {
   Event({
     this.id,
     required this.name,
+    required this.category,
     required this.location,
     required this.eventType,
     required this.description,
@@ -43,6 +45,7 @@ class Event {
       id: map['id'],
       name: map['name'] ?? '',
       location: map['location'] ?? '',
+      category: map['category'] ?? '',
       eventType: map['eventType'] ?? '',
       thumbnail: map['thumbnail'] ?? '',
       poster: map['poster'] ?? '',
@@ -79,6 +82,7 @@ class Event {
       'organizer': organizer?.id,
       'geopoint': geoPoint,
       'isDelete': isDelete,
+      "category": category,
     };
   }
 }

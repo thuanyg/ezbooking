@@ -1,6 +1,8 @@
+import 'package:ezbooking/core/utils/dialogs.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/event_detail_bloc.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/event_detail_event.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/event_detail_state.dart';
+import 'package:ezbooking/presentation/screens/ticket/bloc/get_ticket_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lottie/lottie.dart';
@@ -14,7 +16,7 @@ class ViewTicketPage extends StatefulWidget {
 
   final Ticket ticket;
 
-  ViewTicketPage({
+  const ViewTicketPage({
     super.key,
     required this.ticket,
   });
@@ -26,63 +28,96 @@ class ViewTicketPage extends StatefulWidget {
 class _ViewTicketPageState extends State<ViewTicketPage> {
   final PageController pageController = PageController();
   late EventDetailBloc eventDetailBloc;
+  late GetTicketCubit getTicketCubit;
+
+  bool isShowingDialog = false;
 
   @override
   void initState() {
     super.initState();
+    getTicketCubit = BlocProvider.of<GetTicketCubit>(context);
     eventDetailBloc = BlocProvider.of<EventDetailBloc>(context);
+
+    getTicketCubit.fetchTicket(widget.ticket.id);
     eventDetailBloc.add(FetchEventDetail(widget.ticket.eventID));
   }
-  
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title:
-            const Text('Ticket Details', style: TextStyle(color: Colors.black)),
-      ),
-      body: BlocBuilder<EventDetailBloc, EventDetailState>(
-        builder: (context, state) {
-          if (state is EventDetailLoading) {
-            return Center(
-              child: Lottie.asset(
-                "assets/animations/loading.json",
-                height: 80,
-              ),
+    return BlocConsumer<GetTicketCubit, Ticket?>(
+      listener: (context, stateTicket) {
+        if (stateTicket != null) {
+          // Check ticket status
+          if (stateTicket.status == "Used") {
+            if (isShowingDialog) return;
+            DialogUtils.showWarningDialog(
+              context: context,
+              title: "This ticket has been checked-in!",
+              onClickOutSide: () {
+                if (widget.ticket.status != "Used" && isShowingDialog) {
+                  getTicketCubit.fetchTicket(widget.ticket.id);
+                }
+              },
             );
+            isShowingDialog = true;
           }
+        }
+      },
+      builder: (context, stateTicket) {
+        return Scaffold(
+          backgroundColor: Colors.white,
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.black),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: const Text('Ticket Details',
+                style: TextStyle(color: Colors.black)),
+          ),
+          body: BlocBuilder<EventDetailBloc, EventDetailState>(
+            builder: (context, state) {
+              if (state is EventDetailLoading) {
+                return Center(
+                  child: Lottie.asset(
+                    "assets/animations/loading.json",
+                    height: 80,
+                  ),
+                );
+              }
 
-          if (state is EventDetailError) {
-            return Center(
-              child: Text('Error: ${state.message}'),
-            );
-          }
+              if (state is EventDetailError) {
+                return Center(
+                  child: Text('Error: ${state.message}'),
+                );
+              }
 
-          if (state is EventDetailLoaded) {
-            return _buildTicketContent(context, state.event);
-          }
+              if (state is EventDetailLoaded) {
+                return _buildTicketContent(context, state.event, stateTicket);
+              }
 
-          return const Center(child: Text('No ticket information available'));
-        },
-      ),
+              return const Center(
+                  child: Text('No ticket information available'));
+            },
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildTicketContent(BuildContext context, Event event) {
+  Widget _buildTicketContent(
+    BuildContext context,
+    Event event,
+    Ticket? ticketSnapshot,
+  ) {
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            _buildTicketHeader(),
+            _buildTicketHeader(ticketSnapshot),
             const SizedBox(height: 24),
             _buildQRCode(),
             const SizedBox(height: 24),
@@ -95,7 +130,7 @@ class _ViewTicketPageState extends State<ViewTicketPage> {
     );
   }
 
-  Widget _buildTicketHeader() {
+  Widget _buildTicketHeader(Ticket? ticketSnapshot) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -110,9 +145,11 @@ class _ViewTicketPageState extends State<ViewTicketPage> {
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           Text(
-            widget.ticket.status ?? 'Available',
+            ticketSnapshot != null
+                ? ticketSnapshot.status
+                : widget.ticket.status,
             style: TextStyle(
-              color: _getStatusColor(),
+              color: _getStatusColor(ticketSnapshot),
               fontWeight: FontWeight.bold,
             ),
           )
@@ -121,8 +158,9 @@ class _ViewTicketPageState extends State<ViewTicketPage> {
     );
   }
 
-  Color _getStatusColor() {
-    switch (widget.ticket.status) {
+  Color _getStatusColor(Ticket? ticket) {
+    final ticketComparison = ticket ?? widget.ticket;
+    switch (ticketComparison.status) {
       case 'Available':
         return Colors.green;
       case 'Used':
@@ -191,7 +229,7 @@ class _ViewTicketPageState extends State<ViewTicketPage> {
           const Divider(),
           _buildDetailRow('Date', AppUtils.formatDate(event.date)),
           const Divider(),
-          _buildDetailRow('Location', event.location ?? 'Not Specified'),
+          _buildDetailRow('Location', event.location),
         ],
       ),
     );
@@ -204,9 +242,13 @@ class _ViewTicketPageState extends State<ViewTicketPage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: Colors.black54)),
-          Text(value,
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold, color: Colors.black87))
+          Text(
+            value,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          )
         ],
       ),
     );

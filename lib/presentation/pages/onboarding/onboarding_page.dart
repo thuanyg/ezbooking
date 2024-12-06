@@ -27,7 +27,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
       body: Stack(children: [
         Center(
           child: Padding(
-            padding: const EdgeInsets.only(bottom: 100),
+            padding: const EdgeInsets.only(bottom: 230),
             child: PageView.builder(
               scrollDirection: Axis.horizontal,
               controller: _pageController,
@@ -46,7 +46,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   children: [
                     Center(
                         child: ImageHelper.loadAssetImage(
-                            onboardings[index].imageLink)),
+                      onboardings[index].imageLink,
+                      height: 200,
+                    )),
                   ],
                 );
               },
@@ -61,8 +63,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
               shape: BoxShape.rectangle,
               color: AppColors.primaryColor,
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(48),
-                topRight: Radius.circular(48),
+                topLeft: Radius.circular(38),
+                topRight: Radius.circular(38),
               ),
             ),
             child: Padding(
@@ -79,7 +81,11 @@ class _OnboardingPageState extends State<OnboardingPage> {
                   Text(
                     textAlign: TextAlign.center,
                     onboardings[_currentPage].desc,
-                    style: AppStyles.title1.copyWith(color: Colors.white),
+                    style: AppStyles.title1.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w400,
+                      fontSize: 17,
+                    ),
                   ),
                   Expanded(
                     child: Align(
@@ -133,7 +139,6 @@ class _OnboardingPageState extends State<OnboardingPage> {
                                 saveGuess();
                                 Navigator.pushReplacementNamed(
                                     context, LoginPage.routeName);
-
                               }
                               setState(() {
                                 if (_currentPage < onboardings.length - 1) {

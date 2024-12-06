@@ -62,8 +62,8 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   const SizedBox(height: 100),
                   ImageHelper.loadAssetImage(
-                    '${assetImageLink}ic_launcher.png',
-                    height: 78,
+                    '${assetImageLink}img_logo.png',
+                    height: 30,
                   ),
                   const SizedBox(height: 48.0),
                   CustomInputField(

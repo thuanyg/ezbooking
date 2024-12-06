@@ -1,6 +1,7 @@
 import 'package:ezbooking/data/datasources/events/event_datasource.dart';
 import 'package:ezbooking/data/models/comment.dart';
 import 'package:ezbooking/data/models/event.dart';
+import 'package:ezbooking/data/models/going.dart';
 import 'package:ezbooking/domain/repositories/event_repository.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -75,9 +76,24 @@ class EventRepositoryImpl extends EventRepository {
   }
 
   @override
-  Future<List<Event>> fetchPopularEventsSortedByProximity({required int limit, required Position currentPosition}) async {
+  Future<List<Event>> fetchPopularEventsSortedByProximity(
+      {required int limit, required Position currentPosition}) async {
     // TODO: implement fetchPopularEventsSortedByProximity
     throw UnimplementedError();
   }
 
+  @override
+  Future<Going> fetchGoingEvent(String eventID) async {
+    return await _datasource.fetchGoingEvent(eventID);
+  }
+
+  @override
+  Stream<int> getTicketAvailable(String eventID) {
+    return _datasource.getTicketAvailable(eventID);
+  }
+
+  @override
+  Future<List<Event>> fetchEventsOfOrganizer(String organizerID) async {
+    return await _datasource.fetchEventsOfOrganizer(organizerID);
+  }
 }

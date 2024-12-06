@@ -8,6 +8,8 @@ import 'package:ezbooking/data/datasources/events/event_datasource_impl.dart';
 import 'package:ezbooking/data/datasources/map_datasource.dart';
 import 'package:ezbooking/data/datasources/orders/order_datasource.dart';
 import 'package:ezbooking/data/datasources/orders/order_datasource_impl.dart';
+import 'package:ezbooking/data/datasources/organizer/organizer_datasource.dart';
+import 'package:ezbooking/data/datasources/organizer/organizer_datasource_impl.dart';
 import 'package:ezbooking/data/datasources/tickets/ticket_datasource.dart';
 import 'package:ezbooking/data/datasources/tickets/ticket_datasource_impl.dart';
 import 'package:ezbooking/data/datasources/users/user_datasource.dart';
@@ -15,22 +17,28 @@ import 'package:ezbooking/data/datasources/users/user_datasource_impl.dart';
 import 'package:ezbooking/data/repositories/auth/auth_repository_impl.dart';
 import 'package:ezbooking/data/repositories/event/event_repository_impl.dart';
 import 'package:ezbooking/data/repositories/orders/order_repository_impl.dart';
+import 'package:ezbooking/data/repositories/organizer/organizer_repository_impl.dart';
 import 'package:ezbooking/data/repositories/tickets/ticket_repository_impl.dart';
 import 'package:ezbooking/data/repositories/user/user_repository_impl.dart';
 import 'package:ezbooking/domain/repositories/auth_repository.dart';
 import 'package:ezbooking/domain/repositories/event_repository.dart';
 import 'package:ezbooking/domain/repositories/order_repository.dart';
+import 'package:ezbooking/domain/repositories/organizer_repository.dart';
 import 'package:ezbooking/domain/repositories/ticket_repository.dart';
 import 'package:ezbooking/domain/repositories/user_repository.dart';
 import 'package:ezbooking/domain/usecases/auth/auth_usecase.dart';
 import 'package:ezbooking/domain/usecases/events/favorite_event.dart';
+import 'package:ezbooking/domain/usecases/events/fetch_available_ticket.dart';
 import 'package:ezbooking/domain/usecases/events/fetch_comments.dart';
 import 'package:ezbooking/domain/usecases/events/fetch_event_detail.dart';
 import 'package:ezbooking/domain/usecases/events/fetch_events_latest.dart';
+import 'package:ezbooking/domain/usecases/events/fetch_events_organizer.dart';
 import 'package:ezbooking/domain/usecases/events/fetch_events_popular.dart';
 import 'package:ezbooking/domain/usecases/events/fetch_events_upcoming.dart';
+import 'package:ezbooking/domain/usecases/events/fetch_going_event.dart';
 import 'package:ezbooking/domain/usecases/maps/map_usecase.dart';
 import 'package:ezbooking/domain/usecases/orders/create_order_ticket.dart';
+import 'package:ezbooking/domain/usecases/organizers/fetch_organizer.dart';
 import 'package:ezbooking/domain/usecases/ticket/create_ticket.dart';
 import 'package:ezbooking/domain/usecases/ticket/get_tickets.dart';
 import 'package:ezbooking/domain/usecases/user/comment_event.dart';
@@ -39,17 +47,23 @@ import 'package:ezbooking/domain/usecases/user/update_user_info.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/comment_bloc.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/event_detail_bloc.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/favorite_bloc.dart';
+import 'package:ezbooking/presentation/pages/event/bloc/fetch_available_ticket_cubit.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/fetch_comment_bloc.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/fetch_favorite_bloc.dart';
+import 'package:ezbooking/presentation/pages/event/bloc/going_event_cubit.dart';
 import 'package:ezbooking/presentation/pages/login/bloc/login_bloc.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/get_location_bloc.dart';
+import 'package:ezbooking/presentation/pages/organizer/bloc/events_organizer_bloc.dart';
+import 'package:ezbooking/presentation/pages/organizer/bloc/organizer_bloc.dart';
 import 'package:ezbooking/presentation/pages/signup/bloc/signup_bloc.dart';
 import 'package:ezbooking/presentation/pages/ticket_booking/bloc/orders/create_order_bloc.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/update_user_bloc.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/latest/latest_event_bloc.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/organizer/organizer_list_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/popular/popular_event_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/upcoming/upcoming_event_bloc.dart';
+import 'package:ezbooking/presentation/screens/ticket/bloc/get_ticket_cubit.dart';
 import 'package:ezbooking/presentation/screens/ticket/bloc/get_tickets_bloc.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_it/get_it.dart';
@@ -122,8 +136,12 @@ void initServiceLocator() {
     () => FetchEventsPopularUseCase(sl<EventRepository>()),
   );
 
-  sl.registerLazySingleton<LatestEventBloc>(
-    () => LatestEventBloc(sl<FetchEventsLatestUseCase>()),
+  sl.registerLazySingleton<FetchGoingEventUseCase>(
+    () => FetchGoingEventUseCase(sl<EventRepository>()),
+  );
+
+  sl.registerLazySingleton<FetchAvailableTicketUseCase>(
+    () => FetchAvailableTicketUseCase(sl<EventRepository>()),
   );
 
   sl.registerLazySingleton<PopularEventBloc>(
@@ -136,6 +154,26 @@ void initServiceLocator() {
 
   sl.registerLazySingleton<EventDetailBloc>(
     () => EventDetailBloc(sl<FetchEventDetailUseCase>()),
+  );
+
+  sl.registerLazySingleton<LatestEventBloc>(
+    () => LatestEventBloc(sl<FetchEventsLatestUseCase>()),
+  );
+
+  sl.registerLazySingleton<FetchEventsOrganizerUseCase>(
+    () => FetchEventsOrganizerUseCase(sl<EventRepository>()),
+  );
+
+  sl.registerLazySingleton<GoingEventCubit>(
+    () => GoingEventCubit(sl<FetchGoingEventUseCase>()),
+  );
+
+  sl.registerLazySingleton<FetchAvailableTicketCubit>(
+    () => FetchAvailableTicketCubit(sl<FetchAvailableTicketUseCase>()),
+  );
+
+  sl.registerLazySingleton<EventsOrganizerBloc>(
+    () => EventsOrganizerBloc(sl<FetchEventsOrganizerUseCase>()),
   );
 
   /// User
@@ -236,7 +274,6 @@ void initServiceLocator() {
     () => CreateTicketUseCase(sl<TicketRepository>()),
   );
 
-
   sl.registerLazySingleton<GetTicketsUseCase>(
     () => GetTicketsUseCase(sl<TicketRepository>()),
   );
@@ -245,5 +282,28 @@ void initServiceLocator() {
     () => GetTicketsBloc(sl<GetTicketsUseCase>()),
   );
 
+  sl.registerLazySingleton<GetTicketCubit>(
+    () => GetTicketCubit(sl<GetTicketsUseCase>()),
+  );
 
+  // Organizer
+  sl.registerLazySingleton<OrganizerDatasource>(
+    () => OrganizerDatasourceImpl(),
+  );
+
+  sl.registerLazySingleton<OrganizerRepository>(
+    () => OrganizerRepositoryImpl(sl<OrganizerDatasource>()),
+  );
+
+  sl.registerLazySingleton<FetchOrganizerUseCase>(
+    () => FetchOrganizerUseCase(sl<OrganizerRepository>()),
+  );
+
+  sl.registerLazySingleton<OrganizerBloc>(
+    () => OrganizerBloc(sl<FetchOrganizerUseCase>()),
+  );
+
+  sl.registerLazySingleton<OrganizerListBloc>(
+    () => OrganizerListBloc(),
+  );
 }

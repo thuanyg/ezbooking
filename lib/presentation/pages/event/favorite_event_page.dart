@@ -1,3 +1,4 @@
+import 'package:ezbooking/core/config/app_colors.dart';
 import 'package:ezbooking/data/models/event.dart';
 import 'package:ezbooking/main.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/fetch_favorite_bloc.dart';
@@ -11,32 +12,9 @@ import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 
 class FavoritesEventsPage extends StatelessWidget {
-  FavoritesEventsPage({super.key});
+  const FavoritesEventsPage({super.key});
 
   static String routeName = "FavoritesEventsPage";
-  final List<Map<String, dynamic>> favoriteEvents = [
-    {
-      'title': 'Summer Music Festival',
-      'date': DateTime(2024, 7, 15),
-      'location': 'Central Park, New York',
-      'imageUrl': 'https://example.com/music-festival.jpg',
-      'price': 89.99,
-      'category': 'Music',
-      'description':
-          'Experience the best summer music festival with top artists.',
-      'attendees': 2500,
-    },
-    {
-      'title': 'Tech Conference 2024',
-      'date': DateTime(2024, 8, 20),
-      'location': 'Convention Center, San Francisco',
-      'imageUrl': 'https://example.com/tech-conf.jpg',
-      'price': 299.99,
-      'category': 'Technology',
-      'description': 'Join the biggest tech conference of the year.',
-      'attendees': 1800,
-    },
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -47,24 +25,25 @@ class FavoritesEventsPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: _buildAppBar(),
-      body: favoriteEvents.isEmpty
-          ? _buildEmptyState()
-          : BlocBuilder<FetchFavoriteBloc, FetchFavoriteState>(
-              builder: (context, state) {
-                if (state is FetchFavoriteLoading) {
-                  return Center(
-                    child: Lottie.asset(
-                      "assets/animations/loading.json",
-                      height: 80,
-                    ),
-                  );
-                }
-                if (state is FetchFavoriteSuccess) {
-                  return _buildEventsList(state.events);
-                }
-                return const SizedBox.shrink();
-              },
-            ),
+      body: BlocBuilder<FetchFavoriteBloc, FetchFavoriteState>(
+        builder: (context, state) {
+          if (state is FetchFavoriteLoading) {
+            return Center(
+              child: Lottie.asset(
+                "assets/animations/loading.json",
+                height: 80,
+              ),
+            );
+          }
+          if (state is FetchFavoriteSuccess) {
+            if (state.events.isEmpty) {
+              return _buildEmptyState();
+            }
+            return _buildEventsList(state.events);
+          }
+          return const SizedBox.shrink();
+        },
+      ),
     );
   }
 
@@ -81,7 +60,7 @@ class FavoritesEventsPage extends StatelessWidget {
       backgroundColor: Colors.white,
       elevation: 0,
       bottom: PreferredSize(
-        preferredSize: Size.fromHeight(1.0),
+        preferredSize: const Size.fromHeight(1.0),
         child: Container(
           color: Colors.grey[200],
           height: 1.0,
@@ -106,7 +85,7 @@ class FavoritesEventsPage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: EdgeInsets.all(20),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: Colors.grey[100],
               shape: BoxShape.circle,
@@ -118,7 +97,7 @@ class FavoritesEventsPage extends StatelessWidget {
             ),
           ),
           SizedBox(height: 24),
-          Text(
+          const Text(
             'No Favorites Yet',
             style: TextStyle(
               fontSize: 24,
@@ -136,11 +115,11 @@ class FavoritesEventsPage extends StatelessWidget {
               height: 1.5,
             ),
           ),
-          SizedBox(height: 32),
+          const SizedBox(height: 32),
           ElevatedButton.icon(
             onPressed: () {},
-            icon: Icon(Icons.explore),
-            label: Text('Explore Events'),
+            icon: const Icon(Icons.explore),
+            label: const Text('Explore Events'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue[700],
               padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
@@ -212,11 +191,11 @@ class FavoritesEventsPage extends StatelessWidget {
                     left: 16,
                     child: _buildCategoryChip(event.eventType),
                   ),
-                  Positioned(
-                    top: 16,
-                    right: 16,
-                    child: _buildAttendeesBadge(100),
-                  ),
+                  // Positioned(
+                  //   top: 16,
+                  //   right: 16,
+                  //   child: _buildAttendeesBadge(100),
+                  // ),
                 ],
               ),
             ),
@@ -277,7 +256,7 @@ class FavoritesEventsPage extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
-                              color: Colors.blue[700],
+                              color: AppColors.primaryColor,
                             ),
                           ),
                         ],
@@ -285,9 +264,9 @@ class FavoritesEventsPage extends StatelessWidget {
                       ElevatedButton(
                         onPressed: () {},
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue[700],
+                          backgroundColor: AppColors.primaryColor,
                           foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(
+                          padding: const EdgeInsets.symmetric(
                               horizontal: 32, vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),

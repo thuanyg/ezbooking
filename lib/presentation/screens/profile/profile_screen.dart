@@ -8,14 +8,24 @@ import 'package:ezbooking/presentation/pages/payment_method/payment_method_page.
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_bloc.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_state.dart';
 import 'package:ezbooking/presentation/pages/user_profile/my_profile_page.dart';
+import 'package:ezbooking/presentation/taxes/taxes_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
+
+  Future<void> launchUrl(String url) async {
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(url);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,9 +76,10 @@ class ProfileScreen extends StatelessWidget {
                     onTap: () =>
                         Navigator.pushNamed(context, MyProfilePage.routeName),
                     contentPadding: const EdgeInsets.all(0),
-                    leading: const CircleAvatar(
+                    leading: CircleAvatar(
                       backgroundImage: CachedNetworkImageProvider(
-                        "https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg",
+                        state.user.avatarUrl ??
+                            "https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg",
                       ),
                     ),
                     title: Text(state.user.fullName ?? "Guess"),
@@ -92,7 +103,9 @@ class ProfileScreen extends StatelessWidget {
               color: Colors.white,
               elevation: 8,
               child: InkWell(
-                onTap: () {},
+                onTap: () async {
+                  await launchUrl("https://htthuan.id.vn/");
+                },
                 borderRadius: BorderRadius.circular(10),
                 child: Padding(
                   padding:
@@ -167,7 +180,9 @@ class ProfileScreen extends StatelessWidget {
             buildSettingItem(
               title: "Taxes",
               icon: const Icon(Icons.file_copy_outlined),
-              onTap: () {},
+              onTap: () {
+                Navigator.pushNamed(context, TaxesPage.routeName);
+              },
             ),
             const Divider(
               color: Colors.grey,
@@ -186,19 +201,12 @@ class ProfileScreen extends StatelessWidget {
               thickness: .1,
             ),
             buildSettingItem(
-              title: "Login & security",
-              icon: const Icon(Icons.security_rounded),
-              onTap: () {},
-            ),
-            const Divider(
-              color: Colors.grey,
-              height: 1,
-              thickness: .1,
-            ),
-            buildSettingItem(
               title: "Accessibility",
               icon: const Icon(Icons.settings_applications_outlined),
-              onTap: () {},
+              onTap: () {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text("This feature are being developed!")));
+              },
             ),
             const Divider(
               color: Colors.grey,
@@ -221,13 +229,14 @@ class ProfileScreen extends StatelessWidget {
                   acceptPressed: () async {
                     DialogUtils.showLoadingDialog(context);
                     await FirebaseAuth.instance.signOut();
+                    BlocProvider.of<UserInfoBloc>(context).reset();
                     await Future.delayed(
                       const Duration(milliseconds: 800),
                       () {
                         Navigator.pushNamedAndRemoveUntil(
                           context,
                           LoginPage.routeName,
-                          (route) => true,
+                          (route) => false,
                         );
                       },
                     );

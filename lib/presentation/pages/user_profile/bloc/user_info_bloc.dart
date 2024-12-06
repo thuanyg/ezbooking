@@ -7,6 +7,7 @@ import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_state.d
 class UserInfoBloc extends Bloc<UserInfoEvent, UserInfoState> {
   final FetchUserInfoUseCase _fetchUserInfoUseCase;
   UserModel? user;
+
   UserInfoBloc(this._fetchUserInfoUseCase) : super(UserInfoInitial()) {
     on<FetchUserInfo>(
       (event, emit) async {
@@ -20,10 +21,14 @@ class UserInfoBloc extends Bloc<UserInfoEvent, UserInfoState> {
         }
       },
     );
-
   }
 
-  void emitUser(UserModel user){
+  void emitUser(UserModel user) {
     emit(UserInfoLoaded(user));
+  }
+
+  void reset() {
+    user = null;
+    emit(UserInfoInitial());
   }
 }

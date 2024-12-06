@@ -14,11 +14,11 @@ class TicketRepositoryImpl extends TicketRepository {
   }
 
   @override
-  Future<List<Ticket>> fetchTicketOfUser(String userID) async {
-    return await datasource.fetchTicketOfUser(userID);
-  }
-
-  @override
   Stream<List<TicketEntity>> fetchTicketEntitiesOfUser(String userID) =>
       datasource.fetchTicketEntitiesOfUser(userID);
+
+  @override
+  Stream<Ticket> fetchTicket(String ticketID) {
+    return datasource.fetchTicket(ticketID);
+  }
 }

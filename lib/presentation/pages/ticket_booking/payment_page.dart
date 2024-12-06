@@ -56,9 +56,9 @@ class _PaymentPageState extends State<PaymentPage> {
     //   vnpayExpireDate: DateTime.now().add(const Duration(minutes: 15, hours: 7)),
     // );
 
-
-
     String paymentUrl = VnPayPaymentRequest.generatePaymentUrl(paymentRequest);
+
+
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0x00000000))

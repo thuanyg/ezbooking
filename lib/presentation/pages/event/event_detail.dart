@@ -2,7 +2,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ezbooking/core/config/app_colors.dart';
 import 'package:ezbooking/core/config/app_styles.dart';
-import 'package:ezbooking/core/config/constants.dart';
 import 'package:ezbooking/core/services/google_map_service.dart';
 import 'package:ezbooking/core/utils/image_helper.dart';
 import 'package:ezbooking/core/utils/utils.dart';
@@ -16,9 +15,15 @@ import 'package:ezbooking/presentation/pages/event/bloc/event_detail_event.dart'
 import 'package:ezbooking/presentation/pages/event/bloc/event_detail_state.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/favorite_bloc.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/favorite_event.dart';
+import 'package:ezbooking/presentation/pages/event/bloc/fetch_available_ticket_cubit.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/fetch_comment_bloc.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/fetch_comment_event.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/fetch_comment_state.dart';
+import 'package:ezbooking/presentation/pages/event/bloc/going_event_cubit.dart';
+import 'package:ezbooking/presentation/pages/home/home_page.dart';
+import 'package:ezbooking/presentation/pages/organizer/bloc/events_organizer_bloc.dart';
+import 'package:ezbooking/presentation/pages/organizer/bloc/events_organizer_event.dart';
+import 'package:ezbooking/presentation/pages/organizer/bloc/events_organizer_state.dart';
 import 'package:ezbooking/presentation/pages/ticket_booking/ticket_booking_page.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_bloc.dart';
 import 'package:ezbooking/presentation/widgets/button.dart';
@@ -29,10 +34,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class EventDetail extends StatefulWidget {
@@ -46,15 +53,23 @@ class EventDetail extends StatefulWidget {
 
 class _EventDetailState extends State<EventDetail> {
   late ScrollController scrollController;
+
+  // Bloc initialize
   late EventDetailBloc eventDetailBloc;
   late FavoriteBloc favoriteBloc;
   late CommentBloc commentBloc;
   late FetchCommentBloc fetchCommentBloc;
   late UserInfoBloc userInfoBloc;
+  late GoingEventCubit goingEventCubit;
+  late FetchAvailableTicketCubit availableTicketCubit;
 
   final mapService = GoogleMapService();
 
   final commentController = TextEditingController();
+
+  bool isAddNewComment = false;
+
+  List<Event>? eventsCache;
 
   @override
   void initState() {
@@ -65,29 +80,33 @@ class _EventDetailState extends State<EventDetail> {
     favoriteBloc = BlocProvider.of<FavoriteBloc>(context);
     commentBloc = BlocProvider.of<CommentBloc>(context);
     fetchCommentBloc = BlocProvider.of<FetchCommentBloc>(context);
-
+    goingEventCubit = BlocProvider.of<GoingEventCubit>(context);
+    availableTicketCubit = BlocProvider.of<FetchAvailableTicketCubit>(context);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       String? eventID = ModalRoute.of(context)?.settings.arguments as String?;
-      eventDetailBloc.add(FetchEventDetail(eventID ?? ""));
-      fetchCommentBloc.add(FetchComments(eventID: eventID ?? ""));
+      loadData(eventID);
     });
   }
 
-  // void _onScroll() {
-  //   if (scrollController.offset > scrollController.position.maxScrollExtent) {}
-  //   if (scrollController.offset <= scrollController.position.minScrollExtent) {}
-  // }
+  loadData(String? eventID) {
+    eventDetailBloc.add(FetchEventDetail(eventID ?? ""));
+    goingEventCubit.fetchGoingEvent(eventID ?? "");
+    fetchCommentBloc.add(FetchComments(eventID: eventID ?? ""));
+    availableTicketCubit.fetchAvailableTickets(eventID!);
+  }
 
   @override
   void dispose() {
     favoriteBloc.add(ResetFavoriteEvent());
     eventDetailBloc.reset();
     commentBloc.reset();
+    scrollController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    print("object");
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -112,7 +131,11 @@ class _EventDetailState extends State<EventDetail> {
                     flexibleSpace: FlexibleSpaceBar(
                       collapseMode: CollapseMode.pin,
                       stretchModes: const [StretchMode.blurBackground],
-                      background: buildHeader(context, state.event),
+                      background: buildHeader(
+                        context,
+                        state.event,
+                        goingEventCubit,
+                      ),
                     ),
                   ),
                   SliverPersistentHeader(
@@ -156,22 +179,100 @@ class _EventDetailState extends State<EventDetail> {
                   offset: const Offset(0, -10),
                 ),
               ]),
-              child: MainElevatedButton(
-                width: MediaQuery.of(context).size.width - 48,
-                textButton: "BUY TICKET (\$${state.event.ticketPrice})",
-                iconName: "ic_button_next.png",
-                onTap: () => Navigator.pushNamed(
-                  context,
-                  TicketBookingPage.routeName,
-                  arguments: state.event,
-                ),
-              ),
+              child: buildFab(state.event),
             );
           }
           return const SizedBox.shrink();
         },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+    );
+  }
+
+  Widget buildFab(Event event) {
+    bool isSoldOut = event.availableTickets <= 0;
+    if (isSoldOut) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        margin: const EdgeInsets.only(bottom: 4),
+        child: Row(
+          children: [
+            const TicketAvailabilityCounter(
+              availableTickets: 0,
+              backgroundColor: Colors.grey,
+              textColor: Colors.white,
+            ),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Container(
+                clipBehavior: Clip.antiAlias,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: Colors.grey,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Center(
+                  child: Text(
+                    "Sold out",
+                    style: AppStyles.button.copyWith(color: Colors.white),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    DateTime eventDateLocal = event.date.toLocal();
+    if (eventDateLocal.isBefore(DateTime.now())) {
+      return Container(
+        clipBehavior: Clip.antiAlias,
+        height: 56,
+        width: MediaQuery.of(context).size.width - 48,
+        decoration: BoxDecoration(
+          color: Colors.blueGrey,
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Center(
+          child: Text(
+            "Event Ended",
+            style: AppStyles.button.copyWith(color: Colors.white),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      margin: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          BlocBuilder<FetchAvailableTicketCubit, int>(
+            builder: (context, state) {
+              return TicketAvailabilityCounter(
+                availableTickets: state,
+                backgroundColor: AppColors.primaryColor,
+                textColor: Colors.white,
+              );
+            },
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: MainElevatedButton(
+              width: MediaQuery.of(context).size.width - 48,
+              textButton: "BUY TICKET - \$${event.ticketPrice}",
+              iconName: "ic_button_next.png",
+              radius: BorderRadius.circular(10),
+              onTap: () => Navigator.pushNamed(
+                context,
+                TicketBookingPage.routeName,
+                arguments: event,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -207,7 +308,8 @@ class _EventDetailState extends State<EventDetail> {
                   ),
                   const SizedBox(height: 20),
                   Organizer(
-                    avatarImage: "ic_location.png",
+                    id: event.organizer?.id ?? "",
+                    avatarImage: event.organizer?.avatarUrl ?? "",
                     organizerName: event.organizer!.name!,
                   ),
                   const SizedBox(height: 20),
@@ -390,55 +492,9 @@ class _EventDetailState extends State<EventDetail> {
                               return Padding(
                                 padding: const EdgeInsets.only(right: 6),
                                 child: InkWell(
-                                  onTap: () {
-                                    showGeneralDialog(
-                                      barrierDismissible: true,
-                                      context: context,
-                                      barrierLabel: '',
-                                      pageBuilder: (context, _, __) {
-                                        return SizedBox(
-                                          child: Align(
-                                            alignment: Alignment.center,
-                                            child: Material(
-                                              color: Colors.white,
-                                              elevation: 3,
-                                              child: SizedBox(
-                                                height: MediaQuery.of(context)
-                                                        .size
-                                                        .height *
-                                                    0.7,
-                                                width: double.infinity,
-                                                child: PhotoViewGallery.builder(
-                                                  pageController:
-                                                      PageController(
-                                                          initialPage: index),
-                                                  onPageChanged: (index) {},
-                                                  itemCount:
-                                                      event.imageUrls.length,
-                                                  builder: (context, index) {
-                                                    return PhotoViewGalleryPageOptions(
-                                                      imageProvider:
-                                                          CachedNetworkImageProvider(
-                                                              event.imageUrls[
-                                                                  index]),
-                                                      initialScale:
-                                                          PhotoViewComputedScale
-                                                                  .contained *
-                                                              0.8,
-                                                      heroAttributes:
-                                                          PhotoViewHeroAttributes(
-                                                              tag: event
-                                                                      .imageUrls[
-                                                                  index]),
-                                                    );
-                                                  },
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    );
+                                  onTap: () async {
+                                    await _showImageDialog(
+                                        context, index, event.imageUrls);
                                   },
                                   child: ImageHelper.loadNetworkImage(
                                     event.imageUrls[index],
@@ -455,28 +511,31 @@ class _EventDetailState extends State<EventDetail> {
               ),
             ),
             const SizedBox(height: 8),
+            _buildEventsSection(event),
+            const SizedBox(height: 8),
             Container(
               alignment: Alignment.center,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const Text(
+                  const SizedBox(height: 4),
+                  Text(
                     "Customer reviews",
-                    style: TextStyle(
-                      color: Colors.black87,
+                    style: AppStyles.h5.copyWith(
                       fontWeight: FontWeight.w500,
-                      fontSize: 16,
+                      fontSize: 20,
+                      color: Colors.black87,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 10),
                   RatingBar.builder(
                     initialRating: 5,
                     minRating: 1,
                     direction: Axis.horizontal,
                     allowHalfRating: true,
                     itemCount: 5,
-                    itemSize: 20,
+                    itemSize: 24,
                     itemPadding: const EdgeInsets.symmetric(horizontal: 4.0),
                     itemBuilder: (context, _) => const Icon(
                       Icons.star,
@@ -486,14 +545,18 @@ class _EventDetailState extends State<EventDetail> {
                       commentBloc.rating = rating;
                     },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 30),
                   BlocBuilder(
                     bloc: commentBloc,
                     builder: (context, state) {
                       if (state is CommentSuccess) {
-                        state.comment.userModel = userInfoBloc.user;
-                        fetchCommentBloc.addComment(state.comment);
-                        commentController.text = "";
+                        if (isAddNewComment) {
+                          state.comment.userModel = userInfoBloc.user;
+                          fetchCommentBloc.addComment(state.comment);
+                          commentController.text = "";
+                          // Set flag
+                          isAddNewComment = false;
+                        }
                       }
                       return Row(
                         children: [
@@ -548,6 +611,8 @@ class _EventDetailState extends State<EventDetail> {
                                       );
                                       commentBloc
                                           .add(CommentAction(comment: comment));
+                                      // Set flag
+                                      isAddNewComment = true;
                                     }
                                   },
                             borderRadius: BorderRadius.circular(6),
@@ -652,6 +717,250 @@ class _EventDetailState extends State<EventDetail> {
     );
   }
 
+  Future<List<Event>> fetchEventsByCategory(Event event) async {
+    final eventDocs = await FirebaseFirestore.instance
+        .collection("events")
+        .where("category", isEqualTo: event.category)
+        .get();
+
+    return eventDocs.docs.map((e) => Event.fromJson(e.data())).toList();
+  }
+
+  Widget _buildEventsSection(Event event) {
+    if (eventsCache != null) {
+      final events = eventsCache!;
+      return Card(
+        elevation: 2,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Related Events',
+                style: AppStyles.h5.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 250,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: events.length,
+                  itemBuilder: (context, index) {
+                    final event = events[index];
+                    return GestureDetector(
+                      onTap: () {
+                        loadData(event.id);
+                      },
+                      child: Container(
+                        width: 200,
+                        margin: const EdgeInsets.only(right: 12),
+                        child: Card(
+                          elevation: 1,
+                          color: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ClipRRect(
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(12),
+                                ),
+                                child: CachedNetworkImage(
+                                  imageUrl: event.thumbnail ?? "",
+                                  height: 150,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => const Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
+                                  errorWidget: (context, url, error) =>
+                                      const Icon(Icons.error),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      event.name,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      event.location,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '${event.date.day}/${event.date.month}/${event.date.year}',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: AppColors.primaryColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return FutureBuilder<List<Event>>(
+      future: fetchEventsByCategory(event),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {}
+        if (snapshot.connectionState == ConnectionState.done &&
+            snapshot.hasData) {
+          if (snapshot.data!.isNotEmpty) {
+            List<Event> events = snapshot.data!;
+            events.removeWhere((e) => e.id == event.id);
+            eventsCache = events;
+            return Card(
+              elevation: 2,
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Related Events',
+                      style: AppStyles.h5.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 250,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: events.length,
+                        itemBuilder: (context, index) {
+                          final event = events[index];
+                          return GestureDetector(
+                            onTap: () {
+                              Navigator.pushNamed(
+                                context,
+                                EventDetail.routeName,
+                                arguments: event.id,
+                              );
+                            },
+                            child: Container(
+                              width: 200,
+                              margin: const EdgeInsets.only(right: 12),
+                              child: Card(
+                                elevation: 1,
+                                color: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: const BorderRadius.vertical(
+                                        top: Radius.circular(12),
+                                      ),
+                                      child: CachedNetworkImage(
+                                        imageUrl: event.thumbnail ?? "",
+                                        height: 150,
+                                        width: double.infinity,
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) =>
+                                            const Center(
+                                          child: CircularProgressIndicator(),
+                                        ),
+                                        errorWidget: (context, url, error) =>
+                                            const Icon(Icons.error),
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            event.name,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            event.location,
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            '${event.date.day}/${event.date.month}/${event.date.year}',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: AppColors.primaryColor,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
   Column buildCommentItem(Comment comment) {
     final currentUser = FirebaseAuth.instance.currentUser;
     return Column(
@@ -723,19 +1032,65 @@ class _EventDetailState extends State<EventDetail> {
     );
   }
 
-  SizedBox buildHeader(BuildContext context, Event event) {
+  _showImageDialog(
+      BuildContext context, int index, List<String> imageUrls) async {
+    await showGeneralDialog(
+      barrierDismissible: true,
+      context: context,
+      barrierLabel: '',
+      pageBuilder: (context, _, __) {
+        return SizedBox(
+          child: Align(
+            alignment: Alignment.center,
+            child: Material(
+              color: Colors.white,
+              elevation: 3,
+              child: SizedBox(
+                height: MediaQuery.of(context).size.height * 0.7,
+                width: double.infinity,
+                child: PhotoViewGallery.builder(
+                  wantKeepAlive: true,
+                  pageController: PageController(initialPage: index),
+                  itemCount: imageUrls.length,
+                  builder: (context, index) {
+                    return PhotoViewGalleryPageOptions(
+                      imageProvider:
+                          CachedNetworkImageProvider(imageUrls[index]),
+                      initialScale: PhotoViewComputedScale.contained * 0.8,
+                      heroAttributes:
+                          PhotoViewHeroAttributes(tag: imageUrls[index]),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  SizedBox buildHeader(
+      BuildContext context, Event event, GoingEventCubit goingEventBloc) {
     return SizedBox(
       height: 268,
       child: Stack(
         children: [
           Column(
             children: [
-              SizedBox(
+              Container(
                 height: 240,
-                child: ImageHelper.loadNetworkImage(
-                  event.thumbnail ?? "",
-                  width: double.maxFinite,
-                  fit: BoxFit.fill,
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: CachedNetworkImageProvider(
+                      event.thumbnail ?? "",
+                    ),
+                    fit: BoxFit.cover,
+                    colorFilter: ColorFilter.mode(
+                      Colors.black.withOpacity(0.55),
+                      BlendMode.darken,
+                    ),
+                  ),
                 ),
               )
             ],
@@ -782,12 +1137,15 @@ class _EventDetailState extends State<EventDetail> {
             bottom: 2,
             left: 36,
             right: 36,
-            child: buildHeaderStickyWidget(),
+            child: buildHeaderStickyWidget(goingEventBloc, event),
           )
         ],
       ),
     );
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }
 
 class PopupMenuComment extends StatefulWidget {
@@ -852,7 +1210,7 @@ class _PopupMenuCommentState extends State<PopupMenuComment> {
   }
 }
 
-Widget buildHeaderStickyWidget() {
+Widget buildHeaderStickyWidget(GoingEventCubit bloc, Event event) {
   return Container(
     height: 60,
     decoration: BoxDecoration(
@@ -871,49 +1229,88 @@ Widget buildHeaderStickyWidget() {
         ),
       ],
     ),
-    child: Row(
-      children: [
-        const SizedBox(width: 16),
-        Expanded(
-          child: Stack(
-            children: [
-              CircleAvatar(
-                child: ImageHelper.loadAssetImage(
-                    "${assetImageLink}ic_avatar.png",
-                    height: 34,
-                    width: 34),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: BlocBuilder<GoingEventCubit, GoingEventState>(
+                builder: (context, state) {
+                  if (state is GoingEventSuccess) {
+                    if (state.going.quantity == 0) {
+                      return Icon(
+                        Icons.join_full,
+                        color: AppColors.primaryColor,
+                        size: 30,
+                      );
+                    }
+                    return Stack(
+                      children: List.generate(
+                        state.going.avatarUrls.length,
+                        (index) {
+                          return Positioned(
+                            left: index * 12,
+                            top: 0,
+                            bottom: 0,
+                            child: CircleAvatar(
+                              radius: 16,
+                              backgroundImage: CachedNetworkImageProvider(
+                                state.going.avatarUrls[index],
+                              ),
+                            ),
+                          );
+                        },
+                      ).toList(),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
               ),
-              Positioned(
-                left: 24,
-                child: CircleAvatar(
-                  child: ImageHelper.loadAssetImage(
-                      "${assetImageLink}ic_avatar.png",
-                      height: 34,
-                      width: 34),
-                ),
-              ),
-              Positioned(
-                left: 48,
-                child: CircleAvatar(
-                  child: ImageHelper.loadAssetImage(
-                      "${assetImageLink}ic_avatar.png",
-                      height: 34,
-                      width: 34),
-                ),
-              )
-            ],
+            ),
           ),
-        ),
-        Expanded(
-          child: Text(
-            "20+ Going",
-            style: AppStyles.h5
-                .copyWith(color: AppColors.primaryColor, fontSize: 16),
+          Expanded(
+            child: BlocBuilder<GoingEventCubit, GoingEventState>(
+              bloc: bloc,
+              builder: (context, state) {
+                if (state is GoingEventSuccess) {
+                  return Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      textAlign: TextAlign.center,
+                      state.going.quantity != 0
+                          ? "${state.going.quantity}+ Going"
+                          : "Join now",
+                      style: AppStyles.h5.copyWith(
+                        color: AppColors.primaryColor,
+                        fontSize: 16,
+                      ),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
           ),
-        ),
-        StandardElevatedButton(textButton: "Attend"),
-        const SizedBox(width: 16),
-      ],
+          StandardElevatedButton(
+            textButton: "Share",
+            onTap: () async {
+              try {
+                String shareUrl = "https://htthuan.id.vn/event?id=${event.id}";
+
+                await Share.share(
+                  shareUrl,
+                  subject: 'Share event to your social media!',
+                );
+              } catch (e) {
+                print('Error sharing uri: $e');
+              }
+            },
+          ),
+        ],
+      ),
     ),
   );
 }
@@ -942,7 +1339,13 @@ class buildHeaderSliver extends SliverPersistentHeaderDelegate {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () {
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      HomePage.routeName,
+                      (route) => false,
+                    );
+                  },
                   icon: const Icon(
                     Icons.arrow_back,
                     color: Colors.white,
@@ -1000,4 +1403,80 @@ class buildHeaderSliver extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) =>
       false;
+}
+
+class TicketAvailabilityCounter extends StatelessWidget {
+  final int availableTickets;
+  final Color backgroundColor;
+  final Color textColor;
+
+  const TicketAvailabilityCounter({
+    super.key,
+    required this.availableTickets,
+    this.backgroundColor = const Color(0xFF4A90E2),
+    this.textColor = Colors.white,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      child: Container(
+        height: 58,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          shape: BoxShape.rectangle,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              spreadRadius: 2,
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.confirmation_number_outlined,
+                color: Colors.white,
+                size: 22,
+              ),
+              const SizedBox(width: 2),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                transitionBuilder: (child, animation) {
+                  // Define the slide animation
+                  final position = Tween<Offset>(
+                    begin: const Offset(0.0, 1.0), // Starts from below
+                    end:
+                        const Offset(0.0, 0.0), // Ends at its original position
+                  ).animate(animation);
+
+                  return SlideTransition(
+                    position: position,
+                    child: child,
+                  );
+                },
+                child: Text(
+                  availableTickets.toString(),
+                  // Use a unique key for the child to trigger the animation
+                  key: ValueKey<int>(availableTickets),
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

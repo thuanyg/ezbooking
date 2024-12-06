@@ -4,15 +4,15 @@ List<Onboarding> onboardings = [
   Onboarding(
       "Explore Upcoming and Nearby Events",
       "In publishing and graphic design, Lorem is a placeholder text commonly",
-      "${assetImageLink}ic_onboarding1.png"),
+      "${assetImageLink}ic_onboarding1_1.png"),
   Onboarding(
       "Web Have Modern Events Calendar Feature",
       " In publishing and graphic design, Lorem is a placeholder text commonly",
-      "${assetImageLink}ic_onboarding2.png"),
+      "${assetImageLink}ic_onboarding1_2.png"),
   Onboarding(
       "To Look Up More Events or Activities Nearby By Map",
       "In publishing and graphic design, Lorem is a placeholder text commonly",
-      "${assetImageLink}ic_onboarding3.png")
+      "${assetImageLink}ic_onboarding1_3.png")
 ];
 
 class Onboarding {

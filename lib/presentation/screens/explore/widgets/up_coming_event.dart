@@ -45,7 +45,7 @@ class _UpComingEventState extends State<UpComingEvent> {
 
   Widget buildUpcomingEvent(List<Event> events) {
     return SizedBox(
-      height: 260,
+      height: 246,
       child: ListView.builder(
         itemCount: events.length,
         scrollDirection: Axis.horizontal,
@@ -97,7 +97,7 @@ class _UpComingEventState extends State<UpComingEvent> {
         itemBuilder: (context, index) {
           return Container(
             margin: const EdgeInsets.only(right: 12),
-            child: UpcomingCard(
+            child: const UpcomingCard(
               id: "#ID",
               title: "Event Name",
               date: "01/01/2020",

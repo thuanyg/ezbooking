@@ -22,4 +22,14 @@ class UserRepositoryImpl extends UserRepository {
   Future<void> comment(Comment comment) async {
     return await _datasource.comment(comment);
   }
+
+  @override
+  Future<void> deleteComment(String id) async {
+    return await _datasource.deleteComment(id);
+  }
+
+  @override
+  Future<void> updateComment(Comment comment) async {
+    return await _datasource.updateComment(comment);
+  }
 }

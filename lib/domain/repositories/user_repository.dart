@@ -7,4 +7,8 @@ abstract class UserRepository {
   Future<void> updateInformation(String id, UserModel userUpdate);
 
   Future<void> comment(Comment comment);
+
+  Future<void> deleteComment(String id);
+
+  Future<void> updateComment(Comment comment);
 }

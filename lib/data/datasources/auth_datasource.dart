@@ -1,6 +1,8 @@
 import 'package:ezbooking/core/services/firebase_auth_service.dart';
 import 'package:ezbooking/core/services/firebase_firestore_service.dart';
+import 'package:ezbooking/core/utils/utils.dart';
 import 'package:ezbooking/data/models/user_creation.dart';
+import 'package:ezbooking/data/models/user_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthDatasource {
@@ -26,15 +28,42 @@ class AuthDatasource {
 
   Future<void> signUp(UserCreation userCreation) async {
     try {
+      // Step 1: Register user in Firebase Authentication
       User? user = await firebaseAuthService.registerWithEmailAndPassword(
-          userCreation.email!, userCreation.password!);
+        userCreation.email!,
+        userCreation.password!,
+      );
+
       if (user != null) {
+        // Step 2: Prepare user model for Firestore
+        final passwordHash =
+            AppUtils.encryptData(userCreation.password!, AppUtils.secretKey);
+        final userModel = UserModel(
+          id: user.uid,
+          email: userCreation.email,
+          fullName: userCreation.fullName,
+          password: passwordHash,
+          isDelete: false,
+        );
+
+        // Step 3: Save user data to Firestore
         await firestoreService.addDocumentWithUid(
-            "users", user.uid, userCreation.toJson());
+          "users",
+          user.uid,
+          userModel.toJson(),
+        );
       }
     } on FirebaseAuthException catch (e) {
+      // Rollback Firebase Authentication if Firestore operation fails
       final user = await firebaseAuthService.getCurrentUser();
-      user?.delete();
+      await user?.delete(); // Ensure no orphaned Auth user exists
+      rethrow;
+    } catch (e) {
+      // Handle Firestore or other errors
+      final user = await firebaseAuthService.getCurrentUser();
+      if (user != null) {
+        await user.delete(); // Rollback Firebase Authentication
+      }
       rethrow;
     }
   }

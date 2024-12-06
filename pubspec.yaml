@@ -49,6 +49,9 @@ dependencies:
   share_plus: ^10.1.2
   image_picker: ^1.1.2
   firebase_storage: ^12.3.6
+  flutter_svg: ^2.0.16
+  google_fonts: ^6.2.1
+  get: ^4.6.6
 
 #  vnpay_flutter: ^1.0.3
 dependency_overrides:
