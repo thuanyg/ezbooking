@@ -117,10 +117,10 @@ class _OrganizerProfilePageState extends State<OrganizerProfilePage> {
                   CircleAvatar(
                     radius: 50,
                     backgroundColor: Colors.white.withOpacity(0.2),
-                    backgroundImage: organizer.avatarUrl != null
-                        ? NetworkImage(organizer.avatarUrl!)
+                    backgroundImage: organizer.avatarUrl != null || organizer.avatarUrl != ""
+                        ? CachedNetworkImageProvider(organizer.avatarUrl!)
                         : null,
-                    child: organizer.avatarUrl == null
+                    child: organizer.avatarUrl == null || organizer.avatarUrl == ""
                         ? const Icon(
                             Icons.person,
                             size: 50,

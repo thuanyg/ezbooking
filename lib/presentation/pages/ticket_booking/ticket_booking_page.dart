@@ -4,7 +4,9 @@ import 'package:ezbooking/core/config/constants.dart';
 import 'package:ezbooking/core/utils/dialogs.dart';
 import 'package:ezbooking/core/utils/utils.dart';
 import 'package:ezbooking/data/models/event.dart';
-import 'package:ezbooking/presentation/pages/ticket_booking/bloc/orders/create_order_bloc.dart';
+import 'package:ezbooking/data/models/ticket.dart';
+import 'package:ezbooking/data/models/vn_pay_response.dart';
+import 'package:ezbooking/presentation/pages/ticket_booking/bloc/tickets/create_ticket_bloc.dart';
 import 'package:ezbooking/presentation/pages/ticket_booking/payment_page.dart';
 import 'package:ezbooking/presentation/pages/ticket_booking/payment_success_page.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_bloc.dart';
@@ -31,7 +33,7 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   late UserInfoBloc userInfoBloc;
-  late CreateOrderBloc createOrderBloc;
+  late CreateTicketBloc createTicketBloc;
 
   bool isOrderCreated = false;
   Order? order;
@@ -41,7 +43,7 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
   void initState() {
     super.initState();
     userInfoBloc = BlocProvider.of<UserInfoBloc>(context);
-    createOrderBloc = BlocProvider.of<CreateOrderBloc>(context);
+    createTicketBloc = BlocProvider.of<CreateTicketBloc>(context);
   }
 
   void _incrementTickets() {
@@ -232,28 +234,13 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                       width: double.infinity,
                       textButton: "Continue",
                       iconName: "ic_button_next.png",
-                      onTap: () {
-                        order = Order(
-                          id: AppUtils.generateRandomString(6),
-                          eventID: event?.id ?? "",
-                          status: "success",
-                          createdAt: cf.Timestamp.now(),
-                          ticketPrice: event!.ticketPrice,
-                          ticketQuantity: int.parse(quantityController.text),
-                          userID: FirebaseAuth.instance.currentUser!.uid,
-                          orderType: 'Online',
-                        );
-                        Navigator.of(context).push(MaterialPageRoute(
-                          builder: (context) => const PaymentPage(),
-                          settings: RouteSettings(arguments: order)
-                        ));
-                        return;
+                      onTap: () async {
                         DialogUtils.showLoadingDialog(context);
-                        // Success payment
                         order = Order(
-                          id: AppUtils.generateRandomString(6),
+                          id: "EZB-${DateTime.now().millisecondsSinceEpoch}",
                           eventID: event?.id ?? "",
-                          status: "success",
+                          status: "pending",
+                          paymentMethod: "VNPay",
                           createdAt: cf.Timestamp.now(),
                           ticketPrice: event!.ticketPrice,
                           ticketQuantity: int.parse(quantityController.text),
@@ -261,204 +248,223 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                           orderType: 'Online',
                         );
 
-                        createOrderBloc.createOrderAndTickets(order!);
+                        await cf.FirebaseFirestore.instance
+                            .collection('orders')
+                            .doc(order?.id)
+                            .set(order!.toFirestore());
 
-                        showGeneralDialog(
-                          barrierLabel: '',
-                          context: context,
-                          barrierDismissible: false,
-                          pageBuilder: (context, _, __) {
-                            return WillPopScope(
-                              onWillPop: () async {
-                                return true;
-                              },
-                              child: Container(
-                                alignment: Alignment.center,
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 40),
-                                child: Material(
-                                  borderRadius: BorderRadius.circular(18),
+                        DialogUtils.hide(context);
+
+                        await Navigator.of(context)
+                            .push(MaterialPageRoute(
+                                builder: (context) =>
+                                    PaymentPage(order: order!)))
+                            .then(
+                          (value) async {
+                            List<Ticket> tickets = [];
+
+                            final vnpayResponse = value as VnpayResponse;
+
+                            if (vnpayResponse.code == "00") {
+                              tickets = await createTicketFromOrder(order);
+                            } else {
+                              createTicketBloc.errorMessage =
+                                  vnpayResponse.description;
+                              createTicketBloc
+                                  .emitState(TicketCreationStatus.error);
+                            }
+
+                            showGeneralDialog(
+                              barrierLabel: '',
+                              context: context,
+                              barrierDismissible: false,
+                              pageBuilder: (context, _, __) {
+                                return WillPopScope(
+                                  onWillPop: () async {
+                                    return false;
+                                  },
                                   child: Container(
-                                    height:
-                                        MediaQuery.of(context).size.width - 200,
-                                    width: MediaQuery.of(context).size.width,
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: BlocConsumer(
-                                      listener: (context, state) async {
-                                        if (state ==
-                                            OrderCreationStatus.error) {
-                                          await Future.delayed(
-                                            const Duration(milliseconds: 2500),
-                                            () {
-                                              Navigator.pop(context);
-                                            },
-                                          );
-                                        }
-                                        if (state ==
-                                            OrderCreationStatus.success) {
-                                          await Future.delayed(
-                                            const Duration(milliseconds: 1500),
-                                            () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      PaymentSuccessPage(
-                                                    order: order!,
-                                                    event: event!,
-                                                    tickets: createOrderBloc
-                                                        .ticketsBought,
-                                                  ),
-                                                ),
+                                    alignment: Alignment.center,
+                                    margin: const EdgeInsets.symmetric(
+                                        horizontal: 40),
+                                    child: Material(
+                                      borderRadius: BorderRadius.circular(18),
+                                      child: Container(
+                                        height:
+                                            MediaQuery.of(context).size.width -
+                                                200,
+                                        width:
+                                            MediaQuery.of(context).size.width,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        child: BlocConsumer(
+                                          listener: (context, state) async {
+                                            if (state ==
+                                                TicketCreationStatus
+                                                    .creatingTickets) {
+                                              await Future.delayed(
+                                                const Duration(
+                                                    milliseconds: 2500),
+                                                () {
+                                                  Navigator.pop(context);
+                                                },
                                               );
-                                            },
-                                          );
-                                        }
-                                      },
-                                      bloc: createOrderBloc,
-                                      builder: (context, state) {
-                                        if (state == OrderCreationStatus.idle) {
-                                          return Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.center,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Center(
-                                                child: Lottie.asset(
-                                                  '${assetAnimationLink}loading.json',
-                                                  width: 80,
-                                                  fit: BoxFit.cover,
-                                                ),
-                                              ),
-                                              const Text(
-                                                "Loading...",
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                  color: Colors.black,
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.w700,
-                                                ),
-                                              ),
-                                            ],
-                                          );
-                                        } else if (state ==
-                                            OrderCreationStatus.creatingOrder) {
-                                          return Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.center,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Center(
-                                                child: Lottie.asset(
-                                                  '${assetAnimationLink}loading.json',
-                                                  width: 80,
-                                                  fit: BoxFit.cover,
-                                                ),
-                                              ),
-                                              Text(
-                                                "Creating order...",
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                  color: AppColors.primaryColor,
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.w700,
-                                                ),
-                                              ),
-                                            ],
-                                          );
-                                        } else if (state ==
-                                            OrderCreationStatus
-                                                .creatingTickets) {
-                                          return Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.center,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Center(
-                                                child: Lottie.asset(
-                                                  '${assetAnimationLink}loading.json',
-                                                  width: 80,
-                                                  fit: BoxFit.cover,
-                                                ),
-                                              ),
-                                              Text(
-                                                "Creating tickets...",
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                  color: AppColors.primaryColor,
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.w700,
-                                                ),
-                                              ),
-                                            ],
-                                          );
-                                        } else if (state ==
-                                            OrderCreationStatus.success) {
-                                          return const Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.center,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Center(
-                                                  child: Icon(
-                                                Icons.done_all,
-                                                size: 46,
-                                                color: Colors.green,
-                                              )),
-                                              SizedBox(height: 16),
-                                              Text(
-                                                "Order placed successfully!",
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                  color: Colors.green,
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.w700,
-                                                ),
-                                              ),
-                                            ],
-                                          );
-                                        } else if (state ==
-                                            OrderCreationStatus.error) {
-                                          return Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.center,
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              const Center(
-                                                child: Icon(
-                                                  Icons.error,
-                                                  size: 46,
-                                                  color: Colors.red,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 16),
-                                              Text(
-                                                createOrderBloc.errorMessage,
-                                                textAlign: TextAlign.center,
-                                                style: const TextStyle(
-                                                  color: Colors.black,
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.w700,
-                                                ),
-                                              ),
-                                            ],
-                                          );
-                                        } else {
-                                          return const SizedBox.shrink();
-                                        }
-                                      },
+                                            }
+                                            if (state ==
+                                                TicketCreationStatus.success) {
+                                              await Future.delayed(
+                                                const Duration(
+                                                    milliseconds: 1500),
+                                                () {
+                                                  Navigator.push(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          PaymentSuccessPage(
+                                                        order: order!,
+                                                        event: event!,
+                                                        tickets: tickets,
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                              );
+                                            }
+                                            if (state ==
+                                                TicketCreationStatus.error) {
+                                              await Future.delayed(
+                                                const Duration(milliseconds: 2000),
+                                                () => Navigator.pop(context),
+                                              );
+                                            }
+                                          },
+                                          bloc: createTicketBloc,
+                                          builder: (context, state) {
+                                            if (state ==
+                                                TicketCreationStatus.idle) {
+                                              return Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.center,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Center(
+                                                    child: Lottie.asset(
+                                                      '${assetAnimationLink}loading.json',
+                                                      width: 80,
+                                                      fit: BoxFit.cover,
+                                                    ),
+                                                  ),
+                                                  const Text(
+                                                    "...",
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                      color: Colors.black,
+                                                      fontSize: 18,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                  ),
+                                                ],
+                                              );
+                                            } else if (state ==
+                                                TicketCreationStatus
+                                                    .creatingTickets) {
+                                              return Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.center,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Center(
+                                                    child: Lottie.asset(
+                                                      '${assetAnimationLink}loading.json',
+                                                      width: 80,
+                                                      fit: BoxFit.cover,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    "Creating tickets...",
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                      color: AppColors
+                                                          .primaryColor,
+                                                      fontSize: 18,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                  ),
+                                                ],
+                                              );
+                                            } else if (state ==
+                                                TicketCreationStatus.success) {
+                                              return const Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.center,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Center(
+                                                      child: Icon(
+                                                    Icons.done_all,
+                                                    size: 46,
+                                                    color: Colors.green,
+                                                  )),
+                                                  SizedBox(height: 16),
+                                                  Text(
+                                                    "Order placed successfully!",
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(
+                                                      color: Colors.green,
+                                                      fontSize: 18,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                  ),
+                                                ],
+                                              );
+                                            } else if (state ==
+                                                TicketCreationStatus.error) {
+                                              return Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.center,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  const Center(
+                                                    child: Icon(
+                                                      Icons.error,
+                                                      size: 46,
+                                                      color: Colors.red,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 16),
+                                                  Text(
+                                                    createTicketBloc
+                                                        .errorMessage,
+                                                    textAlign: TextAlign.center,
+                                                    style: const TextStyle(
+                                                      color: Colors.black,
+                                                      fontSize: 18,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                    ),
+                                                  ),
+                                                ],
+                                              );
+                                            } else {
+                                              return const SizedBox.shrink();
+                                            }
+                                          },
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
+                                );
+                              },
                             );
                           },
                         );
@@ -513,5 +519,41 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
         ),
       ],
     );
+  }
+
+  Future<List<Ticket>> createTicketFromOrder(Order? order) async {
+    await cf.FirebaseFirestore.instance
+        .collection("orders")
+        .doc(order?.id)
+        .update({
+      "updateAt": cf.Timestamp.now(),
+      "status": "success",
+    });
+    // Create tickets
+    List<Ticket> tickets = [];
+    for (int i = 0; i < order!.ticketQuantity; i++) {
+      final ticketID = AppUtils.generateRandomString(8);
+      // Generate and encrypt QR Code data
+      final qrCodeData = 'ticketId=$ticketID';
+
+      final encryptedData =
+          AppUtils.encryptData(qrCodeData, AppUtils.secretKey);
+
+      final ticket = Ticket(
+        id: ticketID,
+        orderID: order.id,
+        eventID: order.eventID,
+        userID: order.userID,
+        ticketPrice: order.ticketPrice,
+        ticketType: "Standard",
+        status: "Available",
+        qrCodeData: encryptedData,
+        createdAt: DateTime.now().toUtc().add(const Duration(hours: 7)),
+      );
+
+      tickets.add(ticket);
+    }
+    createTicketBloc.createTickets(tickets);
+    return tickets;
   }
 }

@@ -1,3 +1,5 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:ezbooking/core/config/app_colors.dart';
 import 'package:ezbooking/core/config/app_styles.dart';
 import 'package:ezbooking/presentation/pages/organizer/page/organizer_list_page.dart';
 import 'package:ezbooking/presentation/pages/organizer/page/organizer_page.dart';
@@ -74,12 +76,13 @@ class _OrganizerListState extends State<OrganizerList> {
                             children: [
                               CircleAvatar(
                                 radius: 20,
-                                backgroundImage: organizer.avatarUrl != null
-                                    ? NetworkImage(organizer.avatarUrl!)
+                                backgroundColor: AppColors.outlinedButtonColor,
+                                backgroundImage: organizer.avatarUrl != null || organizer.avatarUrl != ""
+                                    ? CachedNetworkImageProvider(organizer.avatarUrl!)
                                     : null,
-                                child: organizer.avatarUrl == null
-                                    ? const Icon(Icons.person,
-                                        size: 40, color: Colors.grey)
+                                child: organizer.avatarUrl == null || organizer.avatarUrl == ""
+                                    ?  Icon(Icons.person,
+                                        size: 24, color: AppColors.primaryColor)
                                     : null,
                               ),
                               const SizedBox(height: 8),

@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 const String aboutEvent =
     "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum ley of type and scrambled it to make a type specimen book. Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. \nIt was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum ley of type and scrambled it to make a type specimen book.";
 List<Onboarding> onboardings = [
@@ -19,6 +21,7 @@ class Onboarding {
   String title;
   String desc;
   String imageLink;
+
   Onboarding(this.title, this.desc, this.imageLink);
 }
 
@@ -29,17 +32,16 @@ List<BottomNavigationItem> bottomNavItems = [
   BottomNavigationItem("${assetImageLink}ic_profile.png", "Profile"),
 ];
 
-List<CategoryItem> categoryItems = [
-  CategoryItem("${assetImageLink}ic_sport_category.png", "Sports", 0xffF0635A),
-  CategoryItem("${assetImageLink}ic_music_category.png", "Music", 0xffF59762),
-  CategoryItem("${assetImageLink}ic_food_category.png", "Food", 0xff29D697),
-  CategoryItem("${assetImageLink}ic_game_category.png", "Game", 0xff46CDFB),
-  CategoryItem("${assetImageLink}ic_sport_category.png", "Sports", 0xffECEBFC),
-  CategoryItem("${assetImageLink}ic_music_category.png", "Music", 0xffF59762),
-  CategoryItem("${assetImageLink}ic_food_category.png", "Food", 0xffF0635A),
-  CategoryItem("${assetImageLink}ic_profile.png", "Game", 0xff29D697),
+List<Color> categoryColors = const [
+  Color(0xffF0635A),
+  Color(0xffF59762),
+  Color(0xff29D697),
+  Color(0xff46CDFB),
+  Color(0xffECEBFC),
+  Color(0xffF59762),
+  Color(0xffF0635A),
+  Color(0xff29D697),
 ];
-
 List<DrawerItem> drawerItems = [
   DrawerItem("${assetImageLink}ic_user_drawer.png", "My Profile"),
   DrawerItem("${assetImageLink}ic_calender_drawer.png", "Calender"),
@@ -51,13 +53,13 @@ List<DrawerItem> drawerItems = [
 ];
 
 List<FilterItem> filterItems = [
-  FilterItem("Sport","${assetImageLink}ic_sport_filter.png"),
-  FilterItem("Music","${assetImageLink}ic_music_filter.png"),
-  FilterItem("Art","${assetImageLink}ic_art_filter.png"),
-  FilterItem("Food","${assetImageLink}ic_food_filter.png"),
-  FilterItem("Sport","${assetImageLink}ic_user_drawer.png"),
-  FilterItem("Sport","${assetImageLink}ic_user_drawer.png"),
-  FilterItem("Sport","${assetImageLink}ic_user_drawer.png"),
+  FilterItem("Sport", "${assetImageLink}ic_sport_filter.png"),
+  FilterItem("Music", "${assetImageLink}ic_music_filter.png"),
+  FilterItem("Art", "${assetImageLink}ic_art_filter.png"),
+  FilterItem("Food", "${assetImageLink}ic_food_filter.png"),
+  FilterItem("Sport", "${assetImageLink}ic_user_drawer.png"),
+  FilterItem("Sport", "${assetImageLink}ic_user_drawer.png"),
+  FilterItem("Sport", "${assetImageLink}ic_user_drawer.png"),
 ];
 
 class FilterItem {

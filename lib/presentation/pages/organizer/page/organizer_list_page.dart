@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:ezbooking/core/config/app_colors.dart';
 import 'package:ezbooking/data/models/organizer.dart';
 import 'package:ezbooking/presentation/pages/organizer/page/organizer_page.dart';
@@ -172,7 +173,7 @@ class _OrganizerCard extends StatelessWidget {
                 child: CircleAvatar(
                   radius: 50,
                   backgroundImage: organizer.avatarUrl != null
-                      ? NetworkImage(organizer.avatarUrl!)
+                      ? CachedNetworkImageProvider(organizer.avatarUrl!)
                       : null,
                   backgroundColor: AppColors.primaryColor.withOpacity(0.2),
                   child: organizer.avatarUrl == null

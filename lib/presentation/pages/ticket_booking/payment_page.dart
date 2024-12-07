@@ -1,63 +1,45 @@
+import 'package:ezbooking/core/utils/dialogs.dart';
 import 'package:ezbooking/data/models/order.dart';
+import 'package:ezbooking/data/models/vn_pay_response.dart';
 import 'package:ezbooking/data/models/vnpay_payment_request.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class PaymentPage extends StatefulWidget {
-  const PaymentPage({super.key});
+  final Order order;
+
+  const PaymentPage({super.key, required this.order});
 
   @override
   State<PaymentPage> createState() => _PaymentPageState();
 }
 
 class _PaymentPageState extends State<PaymentPage> {
-  late final WebViewController controller;
+  WebViewController controller = WebViewController();
 
   @override
   void initState() {
     super.initState();
+    preparePaymentRequest();
   }
 
-  Future<void> launchUrl(String url) async {
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(url);
-    } else {
-      throw 'Could not launch $url';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final order = ModalRoute.of(context)!.settings.arguments as Order;
-
+  preparePaymentRequest() {
     VnPayPaymentRequest paymentRequest = VnPayPaymentRequest(
-      vnpAmount: 100000.toString(),
-      vnpCreateDate: VnPayPaymentRequest.formatDateTime(DateTime.now()),
-      vnpOrderInfo: "Thanh toan don hang ${order.id}",
-      vnpReturnUrl: "https://return-url.com",
+      vnpAmount:
+          (widget.order.ticketPrice * widget.order.ticketQuantity * 24000)
+              .toString(),
+      vnpCreateDate: VnPayPaymentRequest.formatDateTime(
+          DateTime.now().toUtc().add(const Duration(hours: 7))),
+      vnpOrderInfo: Uri.encodeComponent(
+          "Thanh toan don hang EzBooking ${widget.order.id}"),
+      vnpReturnUrl: "https://vnpay-ipn.vercel.app/vnpay_return",
       vnpExpireDate: VnPayPaymentRequest.formatDateTime(
-          DateTime.now().add(const Duration(minutes: 15))),
-      vnpTxnRef: DateTime.now().millisecondsSinceEpoch.toString(),
+          DateTime.now().toUtc().add(const Duration(minutes: 15, hours: 7))),
+      vnpTxnRef: widget.order.id,
     );
 
-    // final paymentUrl = VNPAYFlutter.instance.generatePaymentUrl(
-    //   url: 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
-    //   version: '2.0.1',
-    //   tmnCode: vnpTmnCode,
-    //   txnRef: DateTime.now().millisecondsSinceEpoch.toString(),
-    //   orderInfo: 'Pay 30.000 VND',
-    //   amount: 30000,
-    //   vnpayOrderType: "other",
-    //   returnUrl: 'https://htthuan.id.vn/return',
-    //   ipAdress: '192.168.10.10',
-    //   vnpayHashKey: vnpHashSecret,
-    //   vnPayHashType: VNPayHashType.HMACSHA512,
-    //   vnpayExpireDate: DateTime.now().add(const Duration(minutes: 15, hours: 7)),
-    // );
-
     String paymentUrl = VnPayPaymentRequest.generatePaymentUrl(paymentRequest);
-
 
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
@@ -70,17 +52,59 @@ class _PaymentPageState extends State<PaymentPage> {
               await launchUrl(request.url);
               return NavigationDecision.prevent;
             }
+
+            // Kiểm tra URL trả về từ VNPAY
+            if (request.url
+                .startsWith("https://vnpay-ipn.vercel.app/vnpay_return")) {
+              // Tự động xử lý kết quả trả về từ VNPAY
+              Uri returnUrl = Uri.parse(request.url);
+              String rspCode =
+                  returnUrl.queryParameters['vnp_ResponseCode'] ?? '99';
+
+              final response = VnpayResponse.fromResponseCode(rspCode);
+
+              Navigator.pop<VnpayResponse>(context, response);
+
+              return NavigationDecision.prevent;
+            }
+
             return NavigationDecision.navigate;
           },
         ),
       )
       ..loadRequest(Uri.parse(paymentUrl));
+  }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Payment Page'),
+  Future<void> launchUrl(String url) async {
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(url);
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async {
+        DialogUtils.showConfirmationDialog(
+          context: context,
+          title: "Are you sure you want to exit?",
+          textCancelButton: "Cancel",
+          textAcceptButton: "OK",
+          acceptPressed: () {
+            print("================================");
+              Navigator.pop<VnpayResponse>(
+                  context, VnpayResponse.fromResponseCode("24"));
+          },
+        );
+        return true;
+      },
+      child: Scaffold(
+        body: Padding(
+            padding: EdgeInsets.only(top: kToolbarHeight - 20),
+            child: WebViewWidget(controller: controller)),
       ),
-      body: WebViewWidget(controller: controller),
     );
   }
 }

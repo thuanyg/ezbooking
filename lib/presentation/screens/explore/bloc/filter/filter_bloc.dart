@@ -1,18 +1,17 @@
 import 'package:bloc/bloc.dart';
 import 'package:ezbooking/core/config/constants.dart';
+import 'package:ezbooking/data/models/category.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/filter/filter_event.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/filter/filter_state.dart';
 import 'package:flutter/material.dart';
 
 class FilterBloc extends Bloc<FilterEvent, FilterState> {
-  List<FilterItem> selectedFilterItems = [];
-  List<String> selectedTime = [];
-  DateTime? selectedDate;
+  List<Category> selectedFilterItems = [];
+  DateTimeRange? selectedDateRange;
   RangeValues currentRangeValues = const RangeValues(0, 0);
 
   FilterBloc() : super(FilterInitial()) {
     on<SelectFilterItem>(_onSelectFilterItem);
-    on<SetSelectedTime>(_onSetSelectedTime);
     on<SetSelectedDate>(_onSetSelectedDate);
     on<SetRangeValues>(_onSetRangeValues);
   }
@@ -26,13 +25,9 @@ class FilterBloc extends Bloc<FilterEvent, FilterState> {
     emit(_buildUpdatedState());
   }
 
-  void _onSetSelectedTime(SetSelectedTime event, Emitter<FilterState> emit) {
-    selectedTime = event.selectedTime;
-    emit(_buildUpdatedState());
-  }
 
   void _onSetSelectedDate(SetSelectedDate event, Emitter<FilterState> emit) {
-    selectedDate = event.selectedDate;
+    selectedDateRange = event.selectedDateRange;
     emit(_buildUpdatedState());
   }
 
@@ -44,29 +39,25 @@ class FilterBloc extends Bloc<FilterEvent, FilterState> {
   FilterUpdated _buildUpdatedState() {
     return FilterUpdated(
       selectedFilterItems: selectedFilterItems,
-      selectedTime: selectedTime,
-      selectedDate: selectedDate,
+      selectedDateRange: selectedDateRange,
       currentRangeValues: currentRangeValues,
     );
   }
 
   void resetFilter() {
     selectedFilterItems = [];
-    selectedTime = [];
-    selectedDate = null;
     currentRangeValues = const RangeValues(0, 0);
+    selectedDateRange = null;
     emit(FilterUpdated(
       selectedFilterItems: selectedFilterItems,
-      selectedTime: selectedTime,
-      selectedDate: selectedDate,
+      selectedDateRange: selectedDateRange,
       currentRangeValues: currentRangeValues,
     ));
   }
 
   bool hasFilter() {
     return selectedFilterItems.isNotEmpty ||
-        selectedTime.isNotEmpty ||
-        selectedDate != null ||
+        selectedDateRange != null ||
         currentRangeValues != const RangeValues(0, 0);
   }
 }

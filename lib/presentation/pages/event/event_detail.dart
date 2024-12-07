@@ -871,7 +871,7 @@ class _EventDetailState extends State<EventDetail> {
                           final event = events[index];
                           return GestureDetector(
                             onTap: () {
-                              Navigator.pushNamed(
+                              Navigator.pushReplacementNamed(
                                 context,
                                 EventDetail.routeName,
                                 arguments: event.id,
@@ -1340,11 +1340,7 @@ class buildHeaderSliver extends SliverPersistentHeaderDelegate {
               children: [
                 IconButton(
                   onPressed: () {
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      HomePage.routeName,
-                      (route) => false,
-                    );
+                    Navigator.pop(context);
                   },
                   icon: const Icon(
                     Icons.arrow_back,

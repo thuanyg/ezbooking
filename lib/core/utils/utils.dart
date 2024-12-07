@@ -95,4 +95,25 @@ class AppUtils {
     double kilometers = meters / 1000;
     return kilometers.toStringAsFixed(2);
   }
+
+  static Map<String, double> getBoundingBox({
+    required double latitude,
+    required double longitude,
+    required double radiusInKm,
+  }) {
+    const double earthRadius = 6371;
+
+    double latDelta = radiusInKm / earthRadius * (180 / 3.141592653589793); // chuyển đổi từ km sang độ
+    double lonDelta = radiusInKm /
+        (earthRadius * cos(latitude * (3.141592653589793 / 180))) *
+        (180 / 3.141592653589793);
+
+    return {
+      'minLat': latitude - latDelta,
+      'maxLat': latitude + latDelta,
+      'minLon': longitude - lonDelta,
+      'maxLon': longitude + lonDelta,
+    };
+  }
+
 }

@@ -245,41 +245,13 @@ class EventDatasourceImpl extends EventDatasource {
   @override
   Future<List<Event>> fetchUpcomingEventsSortedByProximity(
       {required int limit, required Position currentPosition}) async {
-    // Kiểm tra và đổi vị trí nếu latitude > 90
-    double latitude = currentPosition.latitude;
-    double longitude = currentPosition.longitude;
-    if (latitude > 90) {
-      final temp = latitude;
-      latitude = longitude;
-      longitude = temp;
-    }
-
-    const double earthRadiusKm = 6371.0;
-    const double radiusInKm = 100; // Bán kính 100km
-
-// Tính toán bounding box với hệ số điều chỉnh
-    double latKmRatio = 1 / 111.0; // 1 độ latitude ≈ 111km
-    double lngKmRatio =
-        1 / (111.0 * cos(latitude * pi / 180.0)); // Điều chỉnh theo latitude
-
-// Tính delta cho latitude và longitude
-    double latDelta = radiusInKm * latKmRatio * 1.2; // Thêm 20% margin
-    double lngDelta = radiusInKm * lngKmRatio * 1.2;
-
-// Tính bounds
-    double minLat = latitude - latDelta;
-    double maxLat = latitude + latDelta;
-    double minLng = longitude - lngDelta;
-    double maxLng = longitude + lngDelta;
 
     try {
       final now = Timestamp.now();
 
       Query query = _eventsCollection
           .where("date", isGreaterThan: now)
-          .where("geoPoint", isGreaterThanOrEqualTo: GeoPoint(minLat, minLng))
-          .where("geoPoint", isLessThanOrEqualTo: GeoPoint(maxLat, maxLng))
-          .orderBy("date", descending: true)
+          .orderBy("date", descending: false)
           .limit(limit);
 
       final QuerySnapshot querySnapshot = await query.get();

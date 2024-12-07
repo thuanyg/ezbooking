@@ -5,7 +5,6 @@ const vnpUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 const String vnpVersion = "2.1.0";
 const String vnpCommand = "pay";
 const String vnpTmnCode = "NRGV3922";
-const String? vnpBankCode = "VNPAYQR";
 const String vnpIpAddr = "127.0.0.1";
 const String vnpLocale = "vn";
 const String vnpOrderType = "other";
@@ -33,65 +32,74 @@ class VnPayPaymentRequest {
   }
 
   static String generatePaymentUrl(VnPayPaymentRequest paymentRequest) {
-    final amount =
-    (double.parse(paymentRequest.vnpAmount) * 100).round().toString();
+    try {
+      final amount = (double.parse(paymentRequest.vnpAmount) * 100).round().toString();
 
-    // Khởi tạo tham số
-    final Map<String, String> vnpParams = {
-      'vnp_Amount': amount,
-      'vnp_Command': vnpCommand,
-      'vnp_CreateDate': paymentRequest.vnpCreateDate,
-      'vnp_CurrCode': 'VND',
-      'vnp_IpAddr': vnpIpAddr,
-      'vnp_Locale': vnpLocale,
-      'vnp_OrderInfo': paymentRequest.vnpOrderInfo,
-      'vnp_OrderType': vnpOrderType,
-      'vnp_ReturnUrl': paymentRequest.vnpReturnUrl,
-      'vnp_TmnCode': vnpTmnCode,
-      'vnp_TxnRef': paymentRequest.vnpTxnRef,
-      'vnp_Version': vnpVersion,
-      if (vnpBankCode != null) 'vnp_BankCode': vnpBankCode!,
-    };
+      final Map<String, String> vnpParams = {
+        'vnp_Amount': amount,
+        'vnp_Command': vnpCommand,
+        'vnp_CreateDate': paymentRequest.vnpCreateDate,
+        'vnp_ExpireDate': paymentRequest.vnpExpireDate,
+        'vnp_CurrCode': 'VND',
+        'vnp_IpAddr': vnpIpAddr,
+        'vnp_Locale': vnpLocale,
+        'vnp_OrderInfo': paymentRequest.vnpOrderInfo,
+        'vnp_OrderType': vnpOrderType,
+        'vnp_ReturnUrl': paymentRequest.vnpReturnUrl,
+        'vnp_TmnCode': vnpTmnCode,
+        'vnp_TxnRef': paymentRequest.vnpTxnRef,
+        'vnp_Version': vnpVersion,
+      };
 
-    // Sắp xếp các tham số theo thứ tự a-z
-    final List<String> fieldNames = vnpParams.keys.toList()..sort();
+      // DEBUG: Print all parameters before sorting
+      print('VNPay Parameters Before Sorting:');
+      vnpParams.forEach((key, value) {
+        print('$key: $value');
+      });
 
-    // Tạo chuỗi hash data
-    final StringBuffer hashData = StringBuffer();
-    for (var fieldName in fieldNames) {
-      final value = vnpParams[fieldName];
-      if (value!.isNotEmpty) {
-        if (hashData.isNotEmpty) {
-          hashData.write('&');
+      final List<String> fieldNames = vnpParams.keys.toList()..sort();
+
+      final StringBuffer hashData = StringBuffer();
+      for (var fieldName in fieldNames) {
+        final value = vnpParams[fieldName];
+        if (value!.isNotEmpty) {
+          if (hashData.isNotEmpty) {
+            hashData.write('&');
+          }
+          hashData.write('$fieldName=${Uri.encodeComponent(value)}');
         }
-        hashData.write('$fieldName=${Uri.encodeComponent(value)}');
       }
+
+      final String signData = hashData.toString();
+      print('Raw Hash Data: $signData');
+
+      // More robust hash generation
+      final vnpSecureHash = Hmac(sha512, utf8.encode(vnpHashSecret))
+          .convert(utf8.encode(signData))
+          .toString();
+          // .toUpperCase(); // VNPay often requires uppercase hashes
+
+      print('Generated Secure Hash (Uppercase): $vnpSecureHash');
+
+      vnpParams['vnp_SecureHash'] = vnpSecureHash;
+
+      final StringBuffer queryUrl = StringBuffer('$vnpUrl?');
+      vnpParams.forEach((key, value) {
+        if (value.isNotEmpty) {
+          if(key == "vnp_Amount") {
+            queryUrl.write('$key=${Uri.encodeComponent(value)}');
+          } else {
+            queryUrl.write('&$key=${Uri.encodeComponent(value)}');
+          }
+        }
+      });
+
+      print('Final Payment URL: $queryUrl');
+
+      return queryUrl.toString();
+    } catch (e) {
+      print('Error generating payment URL: $e');
+      rethrow;
     }
-
-    // Tạo chuỗi ký tự cần ký
-    final String signData = hashData.toString();
-    print('Hash Data: $signData');
-
-    // Tạo chữ ký HMAC-SHA512
-    final vnpSecureHash = Hmac(sha512, utf8.encode(vnpHashSecret))
-        .convert(utf8.encode(signData))
-        .toString();
-
-    print('Generated Secure Hash: $vnpSecureHash');
-
-    // Thêm secure hash vào params
-    vnpParams['vnp_SecureHash'] = vnpSecureHash;
-
-    // Tạo URL thanh toán
-    final StringBuffer queryUrl = StringBuffer('$vnpUrl?');
-    vnpParams.forEach((key, value) {
-      if (value.isNotEmpty) {
-        queryUrl.write('&$key=${Uri.encodeComponent(value)}');
-      }
-    });
-
-    print('Payment URL: $queryUrl');
-
-    return queryUrl.toString();
   }
 }

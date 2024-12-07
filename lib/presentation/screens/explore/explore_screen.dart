@@ -1,11 +1,16 @@
+import 'dart:math';
+
 import 'package:ezbooking/core/utils/utils.dart';
 import 'package:ezbooking/core/config/app_colors.dart';
 import 'package:ezbooking/core/config/app_styles.dart';
 import 'package:ezbooking/core/config/constants.dart';
 import 'package:ezbooking/core/utils/image_helper.dart';
+import 'package:ezbooking/data/models/category.dart';
 import 'package:ezbooking/presentation/pages/event/event_upcoming.dart';
+import 'package:ezbooking/presentation/pages/event/events_by_category.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/get_location_bloc.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/location_state.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/category/fetch_categories_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/filter/filter_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/filter/filter_event.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/latest/latest_event_bloc.dart';
@@ -18,6 +23,7 @@ import 'package:ezbooking/presentation/screens/explore/widgets/latest_event.dart
 import 'package:ezbooking/presentation/screens/explore/widgets/organizer_list.dart';
 import 'package:ezbooking/presentation/screens/explore/widgets/popular_event.dart';
 import 'package:ezbooking/presentation/screens/explore/widgets/up_coming_event.dart';
+import 'package:ezbooking/presentation/search/search_result_page.dart';
 import 'package:ezbooking/presentation/search_location/address_finder_page.dart';
 import 'package:ezbooking/presentation/widgets/button.dart';
 import 'package:ezbooking/presentation/widgets/category.dart';
@@ -35,6 +41,7 @@ class ExploreScreen extends StatefulWidget {
 class _ExploreScreenState extends State<ExploreScreen>
     with AutomaticKeepAliveClientMixin {
   // Bloc
+  late final FetchCategoriesBloc fetchCategoriesBloc;
   late final FilterBloc filterBloc;
   late final UpcomingEventBloc upcomingEventBloc;
   late final LatestEventBloc latestEventBloc;
@@ -45,6 +52,7 @@ class _ExploreScreenState extends State<ExploreScreen>
   @override
   void initState() {
     super.initState();
+    fetchCategoriesBloc = BlocProvider.of<FetchCategoriesBloc>(context);
     locationBloc = BlocProvider.of<GetLocationBloc>(context);
     upcomingEventBloc = BlocProvider.of<UpcomingEventBloc>(context);
     latestEventBloc = BlocProvider.of<LatestEventBloc>(context);
@@ -53,6 +61,7 @@ class _ExploreScreenState extends State<ExploreScreen>
     organizerListBloc = BlocProvider.of<OrganizerListBloc>(context);
 
     // Fetch Data Initial
+    fetchCategoriesBloc.fetchCategories();
     organizerListBloc.fetchOrganizers();
     if (locationBloc.locationResult == null) {
       upcomingEventBloc.add(FetchUpcomingEvent(
@@ -67,19 +76,24 @@ class _ExploreScreenState extends State<ExploreScreen>
         isFetchApproximately: true,
         position: locationBloc.locationResult?.position,
       ));
+
       popularEventBloc.add(FetchPopularEvent());
     }
   }
 
-  Future<DateTime?> showSelectDate(BuildContext context) async {
-    DateTime? dateTime = await showDatePicker(
+  Future<DateTimeRange?> showSelectDateRange(BuildContext context) async {
+    DateTimeRange? dateRange = await showDateRangePicker(
       context: context,
-      helpText: "Select Date",
-      initialDate: filterBloc.selectedDate ?? DateTime.now(),
+      helpText: "Select Date Range",
+      initialDateRange: filterBloc.selectedDateRange ??
+          DateTimeRange(
+            start: DateTime.now(),
+            end: DateTime.now().add(const Duration(days: 7)),
+          ),
       firstDate: DateTime(2000),
       lastDate: DateTime(2050),
     );
-    return dateTime;
+    return dateRange;
   }
 
   @override
@@ -167,7 +181,15 @@ class _ExploreScreenState extends State<ExploreScreen>
                 style: const TextStyle(color: Colors.white),
                 cursorColor: Colors.white,
                 onSubmitted: (value) {
-
+                  if (value.trim().isEmpty) return;
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SearchResultPage(
+                        query: value.trim(),
+                      ),
+                    ),
+                  );
                 },
                 decoration: const InputDecoration(
                   hintText: "Search...",
@@ -256,69 +278,78 @@ class _ExploreScreenState extends State<ExploreScreen>
                           ),
                         ),
                         Text("Filters", style: AppStyles.h4),
-                        SizedBox(
-                          height: 120,
-                          child: ListView.builder(
-                            itemCount: filterItems.length,
-                            scrollDirection: Axis.horizontal,
-                            itemBuilder: (context, index) {
-                              bool isSelected = filterBloc.selectedFilterItems
-                                  .contains(filterItems[index]);
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 8),
-                                child: InkWell(
-                                  onTap: () {
-                                    filterBloc.add(
-                                        SelectFilterItem(filterItems[index]));
-                                  },
-                                  child: Column(
-                                    children: <Widget>[
-                                      Container(
-                                        width: 60,
-                                        height: 60,
-                                        padding: const EdgeInsets.all(20),
-                                        clipBehavior: Clip.antiAlias,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: isSelected
-                                                ? Colors.white
-                                                : AppColors.borderOutlineColor,
-                                            width: 1.5,
-                                          ),
-                                          color: isSelected
-                                              ? AppColors.primaryColor
-                                              : Colors.white,
-                                        ),
-                                        child: ImageHelper.loadAssetImage(
-                                          filterItems[index].icon,
-                                          fit: BoxFit.cover,
-                                          tintColor: isSelected
-                                              ? Colors.white
-                                              : Colors.grey,
+                        BlocBuilder<FetchCategoriesBloc, List<Category>>(
+                          builder: (BuildContext context, List<Category> state) {
+                            if(state.isNotEmpty){
+                              return SizedBox(
+                                height: 120,
+                                child: ListView.builder(
+                                  itemCount: state.length,
+                                  scrollDirection: Axis.horizontal,
+                                  itemBuilder: (context, index) {
+                                    bool isSelected = filterBloc.selectedFilterItems
+                                        .contains(state[index]);
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 8),
+                                      child: InkWell(
+                                        onTap: () {
+                                          filterBloc.add(
+                                              SelectFilterItem(state[index]));
+                                        },
+                                        child: Column(
+                                          children: <Widget>[
+                                            Container(
+                                              width: 60,
+                                              height: 60,
+                                              padding: const EdgeInsets.all(20),
+                                              clipBehavior: Clip.antiAlias,
+                                              decoration: BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                border: Border.all(
+                                                  color: isSelected
+                                                      ? Colors.white
+                                                      : AppColors.borderOutlineColor,
+                                                  width: 1.5,
+                                                ),
+                                                color: isSelected
+                                                    ? AppColors.primaryColor
+                                                    : Colors.white,
+                                              ),
+                                              child: ImageHelper.loadAssetImage(
+                                                filterItems[0].icon,
+                                                fit: BoxFit.cover,
+                                                tintColor: isSelected
+                                                    ? Colors.white
+                                                    : Colors.grey,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Expanded(
+                                                child: Text(
+                                                  state[index].categoryName,
+                                                  style: const TextStyle(fontSize: 16),
+                                                ))
+                                          ],
                                         ),
                                       ),
-                                      const SizedBox(height: 4),
-                                      Expanded(
-                                          child: Text(
-                                        filterItems[index].label,
-                                        style: const TextStyle(fontSize: 16),
-                                      ))
-                                    ],
-                                  ),
+                                    );
+                                  },
                                 ),
                               );
-                            },
-                          ),
+                            }
+                            return const SizedBox.shrink();
+                          },
                         ),
                         Text("Time & Date", style: AppStyles.h5),
                         const SizedBox(height: 8),
                         InkWell(
                           onTap: () async {
-                            final selectedDate = await showSelectDate(context);
-                            if (selectedDate != null) {
-                              filterBloc.add(SetSelectedDate(selectedDate));
+                            final selectedDateRange =
+                                await showSelectDateRange(context);
+                            if (selectedDateRange != null) {
+                              filterBloc
+                                  .add(SetSelectedDate(selectedDateRange));
                             }
                           },
                           child: Container(
@@ -345,50 +376,10 @@ class _ExploreScreenState extends State<ExploreScreen>
                                   color: AppColors.primaryColor,
                                 ),
                                 Text(
-                                  filterBloc.selectedDate != null
-                                      ? DateFormat("yyyy-MM-dd")
-                                          .format(filterBloc.selectedDate!)
-                                      : "Choose from calender",
-                                )
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text("Location", style: AppStyles.h5),
-                        const SizedBox(height: 8),
-                        Container(
-                          height: 60,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                            border:
-                                Border.all(color: AppColors.borderOutlineColor),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Container(
-                                  height: 36,
-                                  width: 36,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(10),
-                                    color: const Color(0xffE6E9FF),
-                                  ),
-                                  child: Icon(
-                                    Icons.location_on_outlined,
-                                    color: AppColors.primaryColor,
-                                  ),
+                                  filterBloc.selectedDateRange != null
+                                      ? "${DateFormat("yyyy-MM-dd").format(filterBloc.selectedDateRange!.start)} - ${DateFormat("yyyy-MM-dd").format(filterBloc.selectedDateRange!.end)}"
+                                      : "Choose from calendar",
                                 ),
-                                const SizedBox(width: 8),
-                                const Expanded(child: Text("Ha Noi, VietNam")),
-                                Icon(
-                                  Icons.arrow_forward_ios_outlined,
-                                  color: AppColors.primaryColor,
-                                  size: 16,
-                                )
                               ],
                             ),
                           ),
@@ -403,14 +394,14 @@ class _ExploreScreenState extends State<ExploreScreen>
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                'Min: ${AppUtils.formatCurrency(filterBloc.currentRangeValues.start)} VND',
+                                'Min: \$${AppUtils.formatCurrency(filterBloc.currentRangeValues.start)}',
                                 style: const TextStyle(
                                   color: Colors.grey,
                                   fontSize: 16,
                                 ),
                               ),
                               Text(
-                                'Max: ${AppUtils.formatCurrency(filterBloc.currentRangeValues.end)} VND',
+                                'Max: \$${AppUtils.formatCurrency(filterBloc.currentRangeValues.end)}',
                                 style: const TextStyle(
                                   color: Colors.grey,
                                   fontSize: 16,
@@ -423,8 +414,7 @@ class _ExploreScreenState extends State<ExploreScreen>
                         RangeSlider(
                           values: filterBloc.currentRangeValues,
                           activeColor: AppColors.primaryColor,
-                          max: 3000000,
-                          // 10 million VND
+                          max: 500,
                           divisions: 100,
                           labels: RangeLabels(
                             AppUtils.formatCurrency(
@@ -471,21 +461,41 @@ class _ExploreScreenState extends State<ExploreScreen>
     );
   }
 
+  Color getCategoryColor({required int index, required int length}) {
+    return categoryColors[index % categoryColors.length];
+  }
+
   Widget buildCategories() {
-    return SizedBox(
-      height: 40,
-      child: ListView.builder(
-        itemCount: categoryItems.length,
-        scrollDirection: Axis.horizontal,
-        shrinkWrap: true,
-        itemBuilder: (context, index) {
-          return buildCategory(
-            categoryName: categoryItems[index].label,
-            icon: categoryItems[index].icon,
-            color: categoryItems[index].color,
+    return BlocBuilder<FetchCategoriesBloc, List<Category>>(
+      builder: (context, state) {
+        if (fetchCategoriesBloc.isLoading) {}
+        if (!fetchCategoriesBloc.isLoading && state.isNotEmpty) {
+          return SizedBox(
+            height: 40,
+            child: ListView.builder(
+              itemCount: state.length,
+              scrollDirection: Axis.horizontal,
+              shrinkWrap: true,
+              itemBuilder: (context, index) {
+                return buildCategory(
+                  categoryName: state[index].categoryName,
+                  onTap: () {
+                    Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) =>
+                          EventsByCategoryPage(category: state[index]),
+                    ));
+                  },
+                  color: getCategoryColor(
+                    index: index,
+                    length: state.length,
+                  ),
+                );
+              },
+            ),
           );
-        },
-      ),
+        }
+        return const SizedBox.shrink();
+      },
     );
   }
 

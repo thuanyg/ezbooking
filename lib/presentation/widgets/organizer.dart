@@ -19,7 +19,7 @@ class Organizer extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.of(context).push(MaterialPageRoute(
+        Navigator.of(context).pushReplacement(MaterialPageRoute(
           builder: (context) => OrganizerProfilePage(organizerID: id),
         ));
       },

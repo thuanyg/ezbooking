@@ -12,9 +12,10 @@ import 'package:ezbooking/presentation/pages/organizer/bloc/events_organizer_blo
 import 'package:ezbooking/presentation/pages/organizer/bloc/organizer_bloc.dart';
 import 'package:ezbooking/presentation/pages/signup/bloc/signup_bloc.dart';
 import 'package:ezbooking/presentation/pages/splash/splash_page.dart';
-import 'package:ezbooking/presentation/pages/ticket_booking/bloc/orders/create_order_bloc.dart';
+import 'package:ezbooking/presentation/pages/ticket_booking/bloc/tickets/create_ticket_bloc.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/update_user_bloc.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_bloc.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/category/fetch_categories_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/filter/filter_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/latest/latest_event_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/organizer/organizer_list_bloc.dart';
@@ -51,14 +52,15 @@ void main() async {
         BlocProvider(create: (_) => sl<GetLocationBloc>()),
         BlocProvider(create: (_) => sl<FetchCommentBloc>()),
         BlocProvider(create: (_) => sl<CommentBloc>()),
-        BlocProvider(create: (_) => sl<CreateOrderBloc>()),
         BlocProvider(create: (_) => sl<GetTicketsBloc>()),
         BlocProvider(create: (_) => sl<GetTicketCubit>()),
+        BlocProvider(create: (_) => sl<CreateTicketBloc>()),
         BlocProvider(create: (_) => sl<GoingEventCubit>()),
         BlocProvider(create: (_) => sl<FetchAvailableTicketCubit>()),
         BlocProvider(create: (_) => sl<OrganizerBloc>()),
         BlocProvider(create: (_) => sl<EventsOrganizerBloc>()),
         BlocProvider(create: (_) => sl<OrganizerListBloc>()),
+        BlocProvider(create: (_) => sl<FetchCategoriesBloc>()),
       ],
       child: const MyApp(),
     ),

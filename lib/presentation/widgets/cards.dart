@@ -77,7 +77,7 @@ class UpcomingCard extends StatelessWidget {
                   child: Text(
                     title,
                     style: AppStyles.title1,
-                    maxLines: 2,
+                    maxLines: 1,
                     textAlign: TextAlign.start,
                     overflow: TextOverflow.ellipsis,
                   ),
