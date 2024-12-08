@@ -5,6 +5,7 @@ import 'package:ezbooking/core/utils/image_helper.dart';
 import 'package:ezbooking/core/utils/utils.dart';
 import 'package:ezbooking/data/models/category.dart';
 import 'package:ezbooking/data/models/event.dart';
+import 'package:ezbooking/presentation/pages/event/event_detail.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/category/fetch_categories_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/filter/filter_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/filter/filter_event.dart';
@@ -436,100 +437,108 @@ class _SearchResultPageState extends State<SearchResultPage> {
   }
 
   Widget _buildEventCard(Event event) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
-            spreadRadius: 2,
-            blurRadius: 5,
-            offset: Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
-            child: Image.network(
-              event.thumbnail ?? event.poster ?? '',
-              height: 200,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).pushNamed(
+          EventDetail.routeName,
+          arguments: event.id,
+        );
+      },
+      child: Container(
+        margin: EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 2,
+              blurRadius: 5,
+              offset: Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+              child: Image.network(
+                event.thumbnail ?? event.poster ?? '',
                 height: 200,
-                color: AppColors.backgroundColor,
-                child: Center(
-                  child: Icon(
-                    Icons.image_not_supported,
-                    color: AppColors.secondaryColor,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  height: 200,
+                  color: AppColors.backgroundColor,
+                  child: Center(
+                    child: Icon(
+                      Icons.image_not_supported,
+                      color: AppColors.secondaryColor,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  event.name,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.secondaryColor,
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event.name,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.secondaryColor,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: 8),
-                Row(
-                  children: [
-                    Icon(Icons.calendar_today,
-                        size: 16, color: AppColors.primaryColor),
-                    SizedBox(width: 8),
-                    Text(
-                      _formatDate(event.date),
-                      style: TextStyle(color: Colors.grey[700]),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.location_on,
-                            size: 16, color: AppColors.primaryColor),
-                        SizedBox(width: 8),
-                        Text(
-                          event.location,
-                          style: TextStyle(color: Colors.grey[700]),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                    Text(
-                      '\$${event.ticketPrice.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.secondaryColor,
+                  SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.calendar_today,
+                          size: 16, color: AppColors.primaryColor),
+                      SizedBox(width: 8),
+                      Text(
+                        _formatDate(event.date),
+                        style: TextStyle(color: Colors.grey[700]),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.location_on,
+                              size: 16, color: AppColors.primaryColor),
+                          SizedBox(width: 8),
+                          Text(
+                            event.location,
+                            style: TextStyle(color: Colors.grey[700]),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                      Text(
+                        '\$${event.ticketPrice.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.secondaryColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

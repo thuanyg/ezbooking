@@ -7,3 +7,6 @@ class LoginSubmitted extends LoginEvent {
 
   LoginSubmitted(this.email, this.password);
 }
+class LoginGoogleSubmitted extends LoginEvent {}
+
+class Reset extends LoginEvent {}

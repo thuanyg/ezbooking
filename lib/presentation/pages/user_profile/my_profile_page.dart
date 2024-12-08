@@ -243,7 +243,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
                         label: "Birthday",
                         text: state.user.birthday == null
                             ? ""
-                            : DateFormat("dd-MM-yyyy")
+                            : DateFormat("yyyy-MM-dd")
                                 .format(DateTime.parse(state.user.birthday!)),
                         iconData: Icons.cake,
                         isEmpty: state.user.birthday == null ? true : false,
@@ -256,7 +256,7 @@ class _MyProfilePageState extends State<MyProfilePage> {
                           User? currentUser = FirebaseAuth.instance.currentUser;
                           UserModel user =
                               UserModel.fromJson(state.user.toJson());
-                          user.birthday = datePicked.toIso8601String();
+                          user.birthday = DateFormat("yyyy-MM-dd").format(datePicked);
                           updateUserBloc.add(
                               UpdateUserInformation(currentUser!.uid, user));
                         },

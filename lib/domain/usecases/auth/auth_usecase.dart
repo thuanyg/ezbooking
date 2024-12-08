@@ -15,4 +15,8 @@ class AuthUseCase {
   Future<User?> signIn(String email, String password) async {
     return await authRepository.signIn(email, password);
   }
+
+  Future<User?> signInWithGoogle() async {
+    return await authRepository.signInWithGoogle();
+  }
 }

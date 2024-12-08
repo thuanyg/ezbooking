@@ -7,6 +7,7 @@ import 'package:ezbooking/presentation/screens/explore/bloc/organizer/organizer_
 import 'package:ezbooking/presentation/screens/explore/explore_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:screenshot/screenshot.dart';
 import 'package:shimmer/shimmer.dart';
 
 class OrganizerList extends StatefulWidget {
@@ -128,35 +129,24 @@ class _OrganizerListState extends State<OrganizerList> {
   Widget buildShimmer() {
     return SizedBox(
       height: 200,
-      child: GridView.builder(
-          scrollDirection: Axis.horizontal,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 0.25,
-          ),
-          itemCount: 4,
-          itemBuilder: (context, index) {
-            return Container(
+      width: double.infinity,
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.only(right: 16),
               decoration: BoxDecoration(
-                color: Colors.grey.shade200,
+                color: const Color(0xfff6fbff),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const CircleAvatar(
-                    radius: 40,
-                    backgroundColor: Colors.white,
-                  ),
-                  const SizedBox(height: 8),
                   Container(
                     width: 100,
                     height: 12,
                     color: Colors.white,
                   ),
-                  const SizedBox(height: 4),
                   Container(
                     width: 80,
                     height: 10,
@@ -164,8 +154,35 @@ class _OrganizerListState extends State<OrganizerList> {
                   ),
                 ],
               ),
-            );
-          }),
+            ),
+          ),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.only(right: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xfff6fbff),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 100,
+                    height: 12,
+                    color: Colors.white,
+                  ),
+                  Container(
+                    width: 80,
+                    height: 10,
+                    color: Colors.white,
+                  ),
+                ],
+              ),
+            ),
+          )
+        ],
+      ),
     );
   }
 }

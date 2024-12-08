@@ -3,15 +3,20 @@ import 'package:ezbooking/core/config/app_styles.dart';
 import 'package:ezbooking/core/utils/dialogs.dart';
 import 'package:ezbooking/core/utils/image_helper.dart';
 import 'package:ezbooking/presentation/pages/event/favorite_event_page.dart';
+import 'package:ezbooking/presentation/pages/login/bloc/login_bloc.dart';
+import 'package:ezbooking/presentation/pages/login/bloc/login_event.dart';
 import 'package:ezbooking/presentation/pages/login/login_page.dart';
 import 'package:ezbooking/presentation/pages/payment_method/payment_method_page.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_bloc.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_state.dart';
 import 'package:ezbooking/presentation/pages/user_profile/my_profile_page.dart';
+import 'package:ezbooking/presentation/policy/policy_privacy_page.dart';
 import 'package:ezbooking/presentation/taxes/taxes_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -19,11 +24,10 @@ import 'package:url_launcher/url_launcher.dart';
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
-  Future<void> launchUrl(String url) async {
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(url);
-    } else {
-      throw 'Could not launch $url';
+  void _launchURL(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
     }
   }
 
@@ -104,7 +108,8 @@ class ProfileScreen extends StatelessWidget {
               elevation: 8,
               child: InkWell(
                 onTap: () async {
-                  await launchUrl("https://htthuan.id.vn/");
+                  String url = "https://htthuan.id.vn";
+                  _launchURL(url);
                 },
                 borderRadius: BorderRadius.circular(10),
                 child: Padding(
@@ -201,6 +206,20 @@ class ProfileScreen extends StatelessWidget {
               thickness: .1,
             ),
             buildSettingItem(
+              title: "Policy & Privacy",
+              icon: const Icon(Icons.policy),
+              onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PolicyPage(),
+                  )),
+            ),
+            const Divider(
+              color: Colors.grey,
+              height: 1,
+              thickness: .1,
+            ),
+            buildSettingItem(
               title: "Accessibility",
               icon: const Icon(Icons.settings_applications_outlined),
               onTap: () {
@@ -229,10 +248,13 @@ class ProfileScreen extends StatelessWidget {
                   acceptPressed: () async {
                     DialogUtils.showLoadingDialog(context);
                     await FirebaseAuth.instance.signOut();
-                    BlocProvider.of<UserInfoBloc>(context).reset();
+                    await GoogleSignIn().signOut();
+                    await FirebaseMessaging.instance.deleteToken();
                     await Future.delayed(
                       const Duration(milliseconds: 800),
                       () {
+                        BlocProvider.of<UserInfoBloc>(context).reset();
+                        BlocProvider.of<LoginBloc>(context).add(Reset());
                         Navigator.pushNamedAndRemoveUntil(
                           context,
                           LoginPage.routeName,

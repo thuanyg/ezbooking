@@ -52,6 +52,11 @@ dependencies:
   flutter_svg: ^2.0.16
   google_fonts: ^6.2.1
   get: ^4.6.6
+  timezone: ^0.10.0
+  flutter_local_notifications: ^18.0.1
+  firebase_messaging: ^15.1.6
+  cloud_functions: ^5.2.0
+  google_sign_in: ^6.2.2
 
 #  vnpay_flutter: ^1.0.3
 dependency_overrides:

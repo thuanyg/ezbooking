@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ezbooking/core/services/firebase_cloud_message.dart';
 import 'package:ezbooking/core/utils/dialogs.dart';
 import 'package:ezbooking/presentation/pages/home/home_page.dart';
 import 'package:ezbooking/presentation/pages/login/bloc/login_bloc.dart';
@@ -13,6 +15,7 @@ import 'package:ezbooking/core/config/app_colors.dart';
 import 'package:ezbooking/core/config/app_styles.dart';
 import 'package:ezbooking/core/config/constants.dart';
 import 'package:ezbooking/core/utils/image_helper.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -65,7 +68,7 @@ class _LoginPageState extends State<LoginPage> {
                     '${assetImageLink}img_logo.png',
                     height: 30,
                   ),
-                  const SizedBox(height: 48.0),
+                  const SizedBox(height: 100.0),
                   CustomInputField(
                     controller: _emailController,
                     label: "abc@email.com",
@@ -85,6 +88,8 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 28.0),
                   BlocBuilder<LoginBloc, LoginState>(
                     builder: (context, state) {
+                      print("LOGIN STATE: $state");
+
                       if (state is LoginFailure) {
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           DialogUtils.hide(context);
@@ -104,12 +109,21 @@ class _LoginPageState extends State<LoginPage> {
                       }
 
                       if (state is LoginSuccess) {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) async {
+                          String? token =
+                              await FirebaseMessaging.instance.getToken();
+                          await FirebaseFirestore.instance
+                              .collection("users")
+                              .doc(state.user?.uid)
+                              .update({"fcmToken": token});
+
                           DialogUtils.hide(context);
                           Navigator.pushNamedAndRemoveUntil(
                               context,
                               HomePage.routeName,
-                              (Route<dynamic> route) => false);
+                              (Route<dynamic> route) => false).then(
+                            (value) => loginBloc.add(Reset()),
+                          );
                         });
                       }
 
@@ -126,7 +140,10 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 24.0),
                   buildDivider(),
                   const SizedBox(height: 16.0),
-                  buildAuthWithGoogle(() => {}),
+                  buildAuthWithGoogle(() {
+                    DialogUtils.showLoadingDialog(context);
+                    loginBloc.add(LoginGoogleSubmitted());
+                  }),
                   const SizedBox(height: 16.0),
                   buildAuthWithFacebook(() => {}),
                   const SizedBox(height: 36.0),

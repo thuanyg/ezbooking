@@ -36,5 +36,22 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         }
       },
     );
+
+    on<LoginGoogleSubmitted>(
+      (event, emit) async {
+        try {
+          emit(LoginLoading());
+          User? user = await _authUseCase.signInWithGoogle();
+          emit(
+            LoginSuccess(user),
+          );
+        } on Exception catch (e) {
+          // Catch any other exceptions
+          emit(LoginFailure('An unexpected error occurred.'));
+        }
+      },
+    );
+
+    on<Reset>((event, emit) => emit(LoginInitial()));
   }
 }

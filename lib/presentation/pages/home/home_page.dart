@@ -6,6 +6,8 @@ import 'package:ezbooking/core/utils/dialogs.dart';
 import 'package:ezbooking/presentation/contact_us/contact_us_page.dart';
 import 'package:ezbooking/presentation/helps_qa/helps_qa_page.dart';
 import 'package:ezbooking/presentation/pages/event/favorite_event_page.dart';
+import 'package:ezbooking/presentation/pages/login/bloc/login_bloc.dart';
+import 'package:ezbooking/presentation/pages/login/bloc/login_event.dart';
 import 'package:ezbooking/presentation/pages/login/login_page.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/get_location_bloc.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/location_state.dart';
@@ -21,9 +23,11 @@ import 'package:ezbooking/core/config/app_styles.dart';
 import 'package:ezbooking/core/config/constants.dart';
 import 'package:ezbooking/core/utils/image_helper.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:lottie/lottie.dart';
 
 class HomePage extends StatefulWidget {
@@ -44,11 +48,13 @@ class _HomePageState extends State<HomePage> {
 
   late GetLocationBloc locationBloc;
   late UserInfoBloc userInfoBloc;
+  late LoginBloc loginBloc;
 
   @override
   void initState() {
     super.initState();
     userInfoBloc = BlocProvider.of<UserInfoBloc>(context);
+    loginBloc = BlocProvider.of<LoginBloc>(context);
     locationBloc = BlocProvider.of<GetLocationBloc>(context);
     locationBloc.getCurrentAddress(context);
     handleFetchUserInfo();
@@ -56,6 +62,7 @@ class _HomePageState extends State<HomePage> {
 
   handleFetchUserInfo() {
     User? user = FirebaseAuth.instance.currentUser;
+    print("USER HOME: $user");
     if (userInfoBloc.user == null) {
       userInfoBloc.add(FetchUserInfo(user!.uid));
     }
@@ -187,35 +194,44 @@ class _HomePageState extends State<HomePage> {
                                         Navigator.pushNamed(context,
                                             FavoritesEventsPage.routeName);
                                       case 3:
-                                        Navigator.pushNamed(context,
-                                            ContactUsPage.routeName);
+                                        Navigator.pushNamed(
+                                            context, ContactUsPage.routeName);
                                       case 4:
                                         Navigator.pop(context);
                                         setState(() {
                                           _tabSelectedIndex = 3;
                                           _pageViewController.animateToPage(
                                             3,
-                                            duration: const Duration(milliseconds: 300),
+                                            duration: const Duration(
+                                                milliseconds: 300),
                                             curve: Easing.standard,
                                           );
                                         });
                                       case 5:
-                                        Navigator.pushNamed(context,
-                                            HelpAndQAPage.routeName);
+                                        Navigator.pushNamed(
+                                            context, HelpAndQAPage.routeName);
                                       case 6:
                                         DialogUtils.showConfirmationDialog(
                                           context: context,
-                                          title: "Are you certain you want to sign out?",
+                                          title:
+                                              "Are you certain you want to sign out?",
                                           textCancelButton: "Cancel",
                                           textAcceptButton: "Logout",
                                           acceptPressed: () async {
-                                            DialogUtils.showLoadingDialog(context);
-                                            await FirebaseAuth.instance.signOut();
-                                            BlocProvider.of<UserInfoBloc>(context).reset();
+                                            DialogUtils.showLoadingDialog(
+                                                context);
+                                            await FirebaseAuth.instance
+                                                .signOut();
+                                            await GoogleSignIn().signOut();
+                                            await FirebaseMessaging.instance
+                                                .deleteToken();
                                             await Future.delayed(
                                               const Duration(milliseconds: 800),
                                                   () {
-                                                Navigator.pushNamedAndRemoveUntil(
+                                                userInfoBloc.reset();
+                                                loginBloc.add(Reset());
+                                                Navigator
+                                                    .pushNamedAndRemoveUntil(
                                                   context,
                                                   LoginPage.routeName,
                                                       (route) => false,

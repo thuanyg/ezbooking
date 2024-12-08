@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:ezbooking/data/models/event.dart';
 import 'package:ezbooking/data/models/ticket.dart';
 import 'package:ezbooking/domain/usecases/ticket/create_ticket.dart';
 
@@ -15,36 +16,36 @@ class CreateTicketBloc extends Cubit<TicketCreationStatus> {
     emit(status);
   }
 
-  Future<void> createTickets(List<Ticket> tickets) async {
+  Future<void> createTickets(List<Ticket> tickets, Event event) async {
+    final firestore = FirebaseFirestore.instance;
+
     try {
-      // Cập nhật trạng thái: Đang tạo vé
       emit(TicketCreationStatus.creatingTickets);
-      final firestore = FirebaseFirestore.instance;
 
-      try {
-        // Sử dụng runTransaction để tạo tất cả vé trong danh sách
-        await firestore.runTransaction((transaction) async {
-          for (var ticket in tickets) {
-            final ticketRef = firestore.collection('tickets').doc(ticket.id);
+      await firestore.runTransaction((transaction) async {
+        final eventRef = firestore.collection('events').doc(event.id);
+        final updatedAvailableTickets = event.availableTickets - tickets.length;
 
-            // Thực hiện tạo vé trong Firestore
-            transaction.set(ticketRef, ticket.toFirestore());
-          }
+        if (updatedAvailableTickets < 0) {
+          throw Exception("Not enough tickets available.");
+        }
+
+        transaction.update(eventRef, {
+          "availableTickets": updatedAvailableTickets,
         });
-      } on Exception catch (e) {
-        throw Exception(e);
-      }
 
-      // Chờ một thời gian để đảm bảo các vé đã được tạo
-      await Future.delayed(const Duration(milliseconds: 800));
+        // Tạo các vé trong collection 'tickets'
+        for (var ticket in tickets) {
+          final ticketRef = firestore.collection('tickets').doc(ticket.id);
+          transaction.set(ticketRef, ticket.toFirestore());
+        }
+      });
 
-      // Cập nhật trạng thái: Thành công
       emit(TicketCreationStatus.success);
     } catch (e) {
       // Xử lý lỗi nếu có
-      print('Unknown error: $e');
+      print('Error creating tickets or updating event: $e');
       emit(TicketCreationStatus.error);
     }
   }
-
 }

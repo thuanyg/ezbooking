@@ -24,6 +24,12 @@ class _PaymentPageState extends State<PaymentPage> {
     preparePaymentRequest();
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+    print("-----Update status order cancelled here-----");
+  }
+
   preparePaymentRequest() {
     VnPayPaymentRequest paymentRequest = VnPayPaymentRequest(
       vnpAmount:
@@ -49,7 +55,7 @@ class _PaymentPageState extends State<PaymentPage> {
           onNavigationRequest: (request) async {
             if (request.url.startsWith('tel:') ||
                 request.url.startsWith('mailto:')) {
-              await launchUrl(request.url);
+              launchUrl(request.url);
               return NavigationDecision.prevent;
             }
 
@@ -94,8 +100,8 @@ class _PaymentPageState extends State<PaymentPage> {
           textAcceptButton: "OK",
           acceptPressed: () {
             print("================================");
-              Navigator.pop<VnpayResponse>(
-                  context, VnpayResponse.fromResponseCode("24"));
+            Navigator.pop<VnpayResponse>(
+                context, VnpayResponse.fromResponseCode("24"));
           },
         );
         return true;

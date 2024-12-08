@@ -1,6 +1,7 @@
 import 'package:ezbooking/core/config/app_colors.dart';
 import 'package:ezbooking/data/models/category.dart';
 import 'package:ezbooking/data/models/event.dart';
+import 'package:ezbooking/presentation/pages/event/event_detail.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -192,7 +193,7 @@ class _EventsByCategoryPageState extends State<EventsByCategoryPage> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          Text(
+          const Text(
             'Check back later for new events',
             style: TextStyle(
               color: Colors.grey,
@@ -207,6 +208,10 @@ class _EventsByCategoryPageState extends State<EventsByCategoryPage> {
     return GestureDetector(
       onTap: () {
         // TODO: Navigate to event details page
+        Navigator.of(context).pushNamed(
+          EventDetail.routeName,
+          arguments: event.id,
+        );
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),

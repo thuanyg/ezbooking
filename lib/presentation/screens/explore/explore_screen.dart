@@ -62,7 +62,6 @@ class _ExploreScreenState extends State<ExploreScreen>
 
     // Fetch Data Initial
     fetchCategoriesBloc.fetchCategories();
-    organizerListBloc.fetchOrganizers();
     if (locationBloc.locationResult == null) {
       upcomingEventBloc.add(FetchUpcomingEvent(
         limit: 10,
@@ -79,6 +78,7 @@ class _ExploreScreenState extends State<ExploreScreen>
 
       popularEventBloc.add(FetchPopularEvent());
     }
+    organizerListBloc.fetchOrganizers();
   }
 
   Future<DateTimeRange?> showSelectDateRange(BuildContext context) async {

@@ -1,3 +1,5 @@
+import 'package:ezbooking/core/services/firebase_cloud_message.dart';
+import 'package:ezbooking/core/services/notification_service.dart';
 import 'package:ezbooking/injection_container.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/comment_bloc.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/event_detail_bloc.dart';
@@ -35,6 +37,9 @@ void main() async {
     await Firebase.initializeApp();
   }
   initServiceLocator();
+  await NotificationService.init();
+  final fcm = FirebaseCloudMessage();
+  await fcm.initialize();
   runApp(
     MultiBlocProvider(
       providers: [

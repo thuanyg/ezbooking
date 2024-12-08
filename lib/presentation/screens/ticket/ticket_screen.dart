@@ -44,7 +44,7 @@ class _TicketScreenState extends State<TicketScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         backgroundColor: Colors.grey[100],
         appBar: _buildAppBar(),
@@ -60,7 +60,6 @@ class _TicketScreenState extends State<TicketScreen> {
               );
             }
             if (state is GetTicketEntitiesSuccess) {
-              print("---------------------------");
               return _buildBody(state.ticketEntities);
             }
             return const SizedBox.shrink();
@@ -85,13 +84,14 @@ class _TicketScreenState extends State<TicketScreen> {
         ),
       ),
       bottom: TabBar(
-        labelColor: Colors.blue[700],
+        labelColor: AppColors.primaryColor,
         unselectedLabelColor: Colors.grey[600],
-        indicatorColor: Colors.blue[700],
+        indicatorColor: AppColors.primaryColor,
         indicatorWeight: 3,
         tabs: const [
           Tab(text: 'Upcoming'),
           Tab(text: 'Checked'),
+          Tab(text: 'Expired'),
           Tab(text: 'Cancelled'),
         ],
       ),
@@ -105,6 +105,9 @@ class _TicketScreenState extends State<TicketScreen> {
     final ticketsChecked =
         tickets.where((t) => t.ticket.status == "Used").toList();
 
+    final ticketsExpired =
+        tickets.where((t) => t.ticket.status == "Expired").toList();
+
     final ticketsCancelled =
         tickets.where((t) => t.ticket.status == "Cancelled").toList();
 
@@ -112,6 +115,7 @@ class _TicketScreenState extends State<TicketScreen> {
       children: [
         TicketTabViewWidget(type: 'upcoming', filteredTickets: ticketsUpcoming),
         TicketTabViewWidget(type: 'checked', filteredTickets: ticketsChecked),
+        TicketTabViewWidget(type: 'expired', filteredTickets: ticketsExpired),
         TicketTabViewWidget(
             type: 'cancelled', filteredTickets: ticketsCancelled),
       ],
@@ -177,6 +181,11 @@ class _TicketTabViewWidgetState extends State<TicketTabViewWidget>
         icon = Icons.event_note;
         message =
             'No checking completed events yet\nYour history will appear here';
+        break;
+      case 'expired':
+        icon = Icons.event_note;
+        message =
+            'No checking expired events yet\nYour tickets will appear here';
         break;
       default:
         icon = Icons.event_busy;

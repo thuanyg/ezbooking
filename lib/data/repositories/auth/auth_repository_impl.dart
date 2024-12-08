@@ -16,4 +16,9 @@ class AuthRepositoryImpl extends AuthRepository {
   Future<User?> signIn(String email, String password) async {
     return await authDatasource.signIn(email, password);
   }
+
+  @override
+  Future<User?> signInWithGoogle() async {
+    return await authDatasource.signInWithGoogle();
+  }
 }

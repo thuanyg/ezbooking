@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart' as cf;
 import 'package:ezbooking/core/config/app_colors.dart';
 import 'package:ezbooking/core/config/constants.dart';
+import 'package:ezbooking/core/services/notification_service.dart';
 import 'package:ezbooking/core/utils/dialogs.dart';
 import 'package:ezbooking/core/utils/utils.dart';
 import 'package:ezbooking/data/models/event.dart';
@@ -15,6 +16,7 @@ import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_state.d
 import 'package:ezbooking/presentation/widgets/button.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lottie/lottie.dart';
 
@@ -149,6 +151,10 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                             padding: const EdgeInsets.symmetric(horizontal: 24),
                             alignment: Alignment.center,
                             child: TextField(
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
                               decoration: const InputDecoration(
                                 border: UnderlineInputBorder(
                                   borderSide: BorderSide.none,
@@ -166,7 +172,7 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                                 color: Colors.black54,
                               ),
                               maxLines: 1,
-                              maxLength: 4,
+                              maxLength: 5,
                               textAlign: TextAlign.center,
                             ),
                           ),
@@ -236,6 +242,24 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                       iconName: "ic_button_next.png",
                       onTap: () async {
                         DialogUtils.showLoadingDialog(context);
+
+                        bool isTicketAvailable = event!.availableTickets >=
+                            int.parse(quantityController.text);
+
+                        if (!isTicketAvailable) {
+                          await Future.delayed(
+                              const Duration(milliseconds: 500));
+                          DialogUtils.showWarningDialog(
+                            context: context,
+                            title:
+                                "Number of tickets out of ${event!.availableTickets}. Please adjust your selection.",
+                            onClickOutSide: () {
+                              DialogUtils.hide(context);
+                            },
+                          );
+                          return;
+                        }
+
                         order = Order(
                           id: "EZB-${DateTime.now().millisecondsSinceEpoch}",
                           eventID: event?.id ?? "",
@@ -270,8 +294,14 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                             } else {
                               createTicketBloc.errorMessage =
                                   vnpayResponse.description;
+
                               createTicketBloc
                                   .emitState(TicketCreationStatus.error);
+
+                                await cf.FirebaseFirestore.instance
+                                    .collection("orders")
+                                    .doc(order?.id)
+                                    .update({"status": "cancelled"});
                             }
 
                             showGeneralDialog(
@@ -315,9 +345,18 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                                             }
                                             if (state ==
                                                 TicketCreationStatus.success) {
+                                              tickets.forEach(
+                                                (element) {
+                                                  NotificationService
+                                                      .showInstantNotification(
+                                                    "New tickets",
+                                                    "Ticket #${element.id} has been created.",
+                                                  );
+                                                },
+                                              );
                                               await Future.delayed(
                                                 const Duration(
-                                                    milliseconds: 1500),
+                                                    milliseconds: 500),
                                                 () {
                                                   Navigator.push(
                                                     context,
@@ -335,8 +374,16 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                                             }
                                             if (state ==
                                                 TicketCreationStatus.error) {
+
+                                              NotificationService
+                                                  .showInstantNotification(
+                                                "Failure",
+                                                "Failed when processing order!",
+                                              );
+
                                               await Future.delayed(
-                                                const Duration(milliseconds: 2000),
+                                                const Duration(
+                                                    milliseconds: 2000),
                                                 () => Navigator.pop(context),
                                               );
                                             }
@@ -553,7 +600,7 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
 
       tickets.add(ticket);
     }
-    createTicketBloc.createTickets(tickets);
+    createTicketBloc.createTickets(tickets, event!);
     return tickets;
   }
 }
