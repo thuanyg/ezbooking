@@ -24,10 +24,14 @@ class _UpComingEventState extends State<UpComingEvent> {
     return BlocBuilder<UpcomingEventBloc, UpcomingEventState>(
       builder: (context, state) {
         if (state is UpcomingEventLoading) {
-          return Shimmer.fromColors(
-            baseColor: Colors.grey.shade200,
-            highlightColor: Colors.grey.shade50,
-            child: buildUpcomingEventShimmer(),
+          return SizedBox(
+            height: 220,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              shrinkWrap: true,
+              itemCount: 5,
+              itemBuilder: (context, index) => const UpcomingCardShimmer(),
+            ),
           );
         }
 
@@ -45,7 +49,7 @@ class _UpComingEventState extends State<UpComingEvent> {
 
   Widget buildUpcomingEvent(List<Event> events) {
     return SizedBox(
-      height: 246,
+      height: 220,
       child: ListView.builder(
         itemCount: events.length,
         scrollDirection: Axis.horizontal,
@@ -79,7 +83,9 @@ class _UpComingEventState extends State<UpComingEvent> {
                 date: DateFormat('d \nMMM').format(events[index].date),
                 imageLink: events[index].thumbnail ?? "",
                 location: events[index].location,
-                distance: currentPosition == null ? "" : "${AppUtils.convertMetersToKilometers(distance)} km",
+                distance: currentPosition == null
+                    ? ""
+                    : "${AppUtils.convertMetersToKilometers(distance)} km",
               ),
             ),
           );
@@ -87,26 +93,91 @@ class _UpComingEventState extends State<UpComingEvent> {
       ),
     );
   }
+}
 
-  Widget buildUpcomingEventShimmer() {
-    return SizedBox(
-      height: 260,
-      child: ListView.builder(
-        itemCount: 5,
-        scrollDirection: Axis.horizontal,
-        itemBuilder: (context, index) {
-          return Container(
-            margin: const EdgeInsets.only(right: 12),
-            child: const UpcomingCard(
-              id: "#ID",
-              title: "Event Name",
-              date: "01/01/2020",
-              imageLink: "",
-              location: "Location",
-              distance: "xKm",
+class UpcomingCardShimmer extends StatelessWidget {
+  const UpcomingCardShimmer({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 200,
+      width: 200,
+      margin: const EdgeInsets.only(right: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xfff6fbff),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(6),
+        child: Column(
+          children: [
+            // Shimmer for the image
+            Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: Container(
+                height: 155,
+                width: 230,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
             ),
-          );
-        },
+            const SizedBox(height: 8.0),
+            // Shimmer for the title
+            Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: Container(
+                height: 20,
+                width: 180,
+                color: Colors.grey[300],
+              ),
+            ),
+            const SizedBox(height: 6.0),
+            // Shimmer for the location and distance
+            Row(
+              children: [
+                Shimmer.fromColors(
+                  baseColor: Colors.grey[300]!,
+                  highlightColor: Colors.grey[100]!,
+                  child: Container(
+                    height: 14,
+                    width: 14,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 4.0),
+                Expanded(
+                  child: Shimmer.fromColors(
+                    baseColor: Colors.grey[300]!,
+                    highlightColor: Colors.grey[100]!,
+                    child: Container(
+                      height: 16,
+                      width: double.infinity,
+                      color: Colors.grey[300],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8.0),
+                Shimmer.fromColors(
+                  baseColor: Colors.grey[300]!,
+                  highlightColor: Colors.grey[100]!,
+                  child: Container(
+                    height: 16,
+                    width: 40,
+                    color: Colors.grey[300],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

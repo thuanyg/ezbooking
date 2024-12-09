@@ -22,38 +22,9 @@ class EventDatasourceImpl extends EventDatasource {
     required int limit,
     required Position currentPosition,
   }) async {
-    // Kiểm tra và đổi vị trí nếu latitude > 90
-    double latitude = currentPosition.latitude;
-    double longitude = currentPosition.longitude;
-    if (latitude > 90) {
-      final temp = latitude;
-      latitude = longitude;
-      longitude = temp;
-    }
-
-    const double earthRadiusKm = 6371.0;
-    const double radiusInKm = 100; // Bán kính 100km
-
-// Tính toán bounding box với hệ số điều chỉnh
-    double latKmRatio = 1 / 111.0; // 1 độ latitude ≈ 111km
-    double lngKmRatio =
-        1 / (111.0 * cos(latitude * pi / 180.0)); // Điều chỉnh theo latitude
-
-// Tính delta cho latitude và longitude
-    double latDelta = radiusInKm * latKmRatio * 1.2; // Thêm 20% margin
-    double lngDelta = radiusInKm * lngKmRatio * 1.2;
-
-// Tính bounds
-    double minLat = latitude - latDelta;
-    double maxLat = latitude + latDelta;
-    double minLng = longitude - lngDelta;
-    double maxLng = longitude + lngDelta;
-
     try {
-      // Query Firestore với bounding box đã tính toán
       Query query = _eventsCollection
-          .where("geoPoint", isGreaterThanOrEqualTo: GeoPoint(minLat, minLng))
-          .where("geoPoint", isLessThanOrEqualTo: GeoPoint(maxLat, maxLng))
+          .where("isDelete", isEqualTo: false)
           .limit(limit);
 
       final QuerySnapshot querySnapshot = await query.get();
@@ -77,7 +48,7 @@ class EventDatasourceImpl extends EventDatasource {
           return Event.fromJson(data, organizer: organizer);
         }),
       );
-      // Sắp xếp danh sách sự kiện theo khoảng cách từ vị trí hiện tại
+
       events.sort((a, b) {
         double distanceA = Geolocator.distanceBetween(
           currentPosition.latitude,
@@ -139,8 +110,9 @@ class EventDatasourceImpl extends EventDatasource {
       final now = Timestamp.now();
 
       Query query = _eventsCollection
+          .where("isDelete", isEqualTo: false)
           .where("date", isGreaterThan: now)
-          .orderBy("date", descending: false)
+          .orderBy("date", descending: true)
           .limit(limit);
 
       final QuerySnapshot querySnapshot = await query.get();
@@ -245,13 +217,13 @@ class EventDatasourceImpl extends EventDatasource {
   @override
   Future<List<Event>> fetchUpcomingEventsSortedByProximity(
       {required int limit, required Position currentPosition}) async {
-
     try {
       final now = Timestamp.now();
 
       Query query = _eventsCollection
+          .where("isDelete", isEqualTo: false)
           .where("date", isGreaterThan: now)
-          .orderBy("date", descending: false)
+          .orderBy("date", descending: true)
           .limit(limit);
 
       final QuerySnapshot querySnapshot = await query.get();
@@ -450,7 +422,8 @@ class EventDatasourceImpl extends EventDatasource {
           .where('organizer', isEqualTo: organizerID)
           .get();
 
-      final events = docs.docs.map((doc) => Event.fromJson(doc.data())).toList();
+      final events =
+          docs.docs.map((doc) => Event.fromJson(doc.data())).toList();
       return events;
     } catch (e) {
       print("Error fetching events: $e");
@@ -463,5 +436,4 @@ class EventDatasourceImpl extends EventDatasource {
     // TODO: implement fetchEventsByCategory
     throw UnimplementedError();
   }
-
 }

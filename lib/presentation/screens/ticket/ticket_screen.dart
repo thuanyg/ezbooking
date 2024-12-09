@@ -10,6 +10,7 @@ import 'package:ezbooking/presentation/screens/ticket/bloc/get_tickets_bloc.dart
 import 'package:ezbooking/presentation/screens/ticket/bloc/get_tickets_event.dart';
 import 'package:ezbooking/presentation/screens/ticket/bloc/get_tickets_state.dart';
 import 'package:ezbooking/presentation/screens/ticket/eticket_widget.dart';
+import 'package:ezbooking/presentation/screens/ticket/ticket_screen_shimmer.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -52,12 +53,7 @@ class _TicketScreenState extends State<TicketScreen> {
           bloc: getTicketsBloc,
           builder: (context, state) {
             if (state is GetTicketsLoading) {
-              return Center(
-                child: Lottie.asset(
-                  "assets/animations/loading.json",
-                  height: 80,
-                ),
-              );
+              return const TicketScreenShimmer();
             }
             if (state is GetTicketEntitiesSuccess) {
               return _buildBody(state.ticketEntities);

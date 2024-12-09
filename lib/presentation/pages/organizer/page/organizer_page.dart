@@ -81,7 +81,7 @@ class _OrganizerProfilePageState extends State<OrganizerProfilePage> {
 
   Widget _buildSliverAppBar(Organizer organizer) {
     return SliverAppBar(
-      expandedHeight: 230,
+      expandedHeight: 210,
       pinned: true,
       leading: IconButton(
         onPressed: () {
@@ -90,58 +90,77 @@ class _OrganizerProfilePageState extends State<OrganizerProfilePage> {
         icon: const Icon(Icons.arrow_back),
       ),
       foregroundColor: Colors.white,
-      backgroundColor: AppColors.primaryColor.withOpacity(.8),
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Background gradient
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppColors.primaryColor,
-                    AppColors.primaryColor.withOpacity(0.7),
-                  ],
-                ),
+      backgroundColor: AppColors.primaryColor,
+      flexibleSpace: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          // Kiểm tra trạng thái cuộn
+          final double appBarHeight = constraints.biggest.height;
+          final bool isCollapsed = appBarHeight <= kToolbarHeight + MediaQuery.of(context).padding.top;
+
+          return FlexibleSpaceBar(
+            title: isCollapsed
+                ? Text(
+              organizer.name ?? 'Anonymous Organizer',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
               ),
-            ),
-            // Organizer Avatar
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 16),
-                  CircleAvatar(
-                    radius: 50,
-                    backgroundColor: Colors.white.withOpacity(0.2),
-                    backgroundImage: organizer.avatarUrl != null || organizer.avatarUrl != ""
-                        ? CachedNetworkImageProvider(organizer.avatarUrl!)
-                        : null,
-                    child: organizer.avatarUrl == null || organizer.avatarUrl == ""
-                        ? const Icon(
-                            Icons.person,
-                            size: 50,
-                            color: Colors.white,
-                          )
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    organizer.name ?? 'Anonymous Organizer',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w600,
+            )
+                : null, // Khi chưa cuộn đến giới hạn, không hiển thị tiêu đề.
+            centerTitle: true,
+            background: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Background gradient
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        AppColors.primaryColor,
+                        AppColors.primaryColor.withOpacity(0.7),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+                // Organizer Avatar + Name
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 16),
+                      CircleAvatar(
+                        radius: 42,
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                        backgroundImage: organizer.avatarUrl != null && organizer.avatarUrl != ""
+                            ? CachedNetworkImageProvider(organizer.avatarUrl!)
+                            : null,
+                        child: organizer.avatarUrl == null || organizer.avatarUrl == ""
+                            ? const Icon(
+                          Icons.person,
+                          size: 42,
+                          color: Colors.white,
+                        )
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        organizer.name ?? 'Anonymous Organizer',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

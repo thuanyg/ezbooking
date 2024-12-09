@@ -272,12 +272,31 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                           orderType: 'Online',
                         );
 
+
                         await cf.FirebaseFirestore.instance
                             .collection('orders')
                             .doc(order?.id)
                             .set(order!.toFirestore());
 
                         DialogUtils.hide(context);
+
+                        // Handle add free Ticket
+                        if(event?.ticketPrice == 0.0) {
+                          final tickets = await createTicketFromOrder(order);
+                          DialogUtils.hide(context);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  PaymentSuccessPage(
+                                    order: order!,
+                                    event: event!,
+                                    tickets: tickets,
+                                  ),
+                            ),
+                          );
+                          return;
+                        }
 
                         await Navigator.of(context)
                             .push(MaterialPageRoute(
@@ -298,10 +317,13 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                               createTicketBloc
                                   .emitState(TicketCreationStatus.error);
 
-                                await cf.FirebaseFirestore.instance
-                                    .collection("orders")
-                                    .doc(order?.id)
-                                    .update({"status": "cancelled"});
+                              await cf.FirebaseFirestore.instance
+                                  .collection("orders")
+                                  .doc(order?.id)
+                                  .update({
+                                "status": "cancelled",
+                                "updatedAt": cf.Timestamp.now(),
+                              });
                             }
 
                             showGeneralDialog(
@@ -374,7 +396,6 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                                             }
                                             if (state ==
                                                 TicketCreationStatus.error) {
-
                                               NotificationService
                                                   .showInstantNotification(
                                                 "Failure",

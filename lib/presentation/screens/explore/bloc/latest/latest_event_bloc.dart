@@ -11,10 +11,12 @@ class LatestEventBloc extends Bloc<LatestEventEvent, LatestEventState> {
     on<FetchLatestEvent>((event, emit) async {
       try {
         emit(LatestEventLoading());
-        final events = await _fetchEventsLatestUseCase.getApproximately(
-          limit: event.limit,
-          curPosition: event.position,
-        );
+        final events = !event.isFetchApproximately
+            ? await _fetchEventsLatestUseCase.call(limit: event.limit)
+            : await _fetchEventsLatestUseCase.getApproximately(
+                limit: event.limit,
+                curPosition: event.position!,
+              );
         emit(LatestEventLoaded(events));
       } on Exception catch (e) {
         emit(LatestEventError(e.toString()));

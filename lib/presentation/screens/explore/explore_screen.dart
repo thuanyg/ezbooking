@@ -14,12 +14,14 @@ import 'package:ezbooking/presentation/screens/explore/bloc/category/fetch_categ
 import 'package:ezbooking/presentation/screens/explore/bloc/filter/filter_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/filter/filter_event.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/latest/latest_event_bloc.dart';
+import 'package:ezbooking/presentation/screens/explore/bloc/latest/latest_event_event.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/organizer/organizer_list_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/popular/popular_event_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/popular/popular_event_event.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/upcoming/upcoming_event_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/upcoming/upcoming_event_event.dart';
 import 'package:ezbooking/presentation/screens/explore/widgets/latest_event.dart';
+import 'package:ezbooking/presentation/screens/explore/widgets/near_by_event.dart';
 import 'package:ezbooking/presentation/screens/explore/widgets/organizer_list.dart';
 import 'package:ezbooking/presentation/screens/explore/widgets/popular_event.dart';
 import 'package:ezbooking/presentation/screens/explore/widgets/up_coming_event.dart';
@@ -44,7 +46,7 @@ class _ExploreScreenState extends State<ExploreScreen>
   late final FetchCategoriesBloc fetchCategoriesBloc;
   late final FilterBloc filterBloc;
   late final UpcomingEventBloc upcomingEventBloc;
-  late final LatestEventBloc latestEventBloc;
+  late final LatestEventBloc nearEventBloc;
   late final PopularEventBloc popularEventBloc;
   late final GetLocationBloc locationBloc;
   late final OrganizerListBloc organizerListBloc;
@@ -55,19 +57,22 @@ class _ExploreScreenState extends State<ExploreScreen>
     fetchCategoriesBloc = BlocProvider.of<FetchCategoriesBloc>(context);
     locationBloc = BlocProvider.of<GetLocationBloc>(context);
     upcomingEventBloc = BlocProvider.of<UpcomingEventBloc>(context);
-    latestEventBloc = BlocProvider.of<LatestEventBloc>(context);
+    nearEventBloc = BlocProvider.of<LatestEventBloc>(context);
     filterBloc = BlocProvider.of<FilterBloc>(context);
     popularEventBloc = BlocProvider.of<PopularEventBloc>(context);
     organizerListBloc = BlocProvider.of<OrganizerListBloc>(context);
 
     // Fetch Data Initial
     fetchCategoriesBloc.fetchCategories();
-    if (locationBloc.locationResult == null) {
+    if (locationBloc.locationResult?.position == null) {
       upcomingEventBloc.add(FetchUpcomingEvent(
         limit: 10,
         isFetchApproximately: false,
       ));
-
+      nearEventBloc.add(FetchLatestEvent(
+        limit: 10,
+        isFetchApproximately: false,
+      ));
       popularEventBloc.add(FetchPopularEvent());
     } else {
       upcomingEventBloc.add(FetchUpcomingEvent(
@@ -75,7 +80,11 @@ class _ExploreScreenState extends State<ExploreScreen>
         isFetchApproximately: true,
         position: locationBloc.locationResult?.position,
       ));
-
+      nearEventBloc.add(FetchLatestEvent(
+        limit: 10,
+        isFetchApproximately: true,
+        position: locationBloc.locationResult?.position,
+      ));
       popularEventBloc.add(FetchPopularEvent());
     }
     organizerListBloc.fetchOrganizers();
@@ -134,17 +143,19 @@ class _ExploreScreenState extends State<ExploreScreen>
       ),
     );
 
-    const body = Padding(
-      padding: EdgeInsets.symmetric(vertical: 4, horizontal: 18),
+    var body = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 18),
       child: Column(
         children: [
-          UpComingEvent(),
-          SizedBox(height: 16),
-          OrganizerList(),
-          SizedBox(height: 16),
-          PopularEvent(),
-          SizedBox(height: 16),
-          LatestEvent(),
+          const UpComingEvent(),
+          const SizedBox(height: 16),
+          if (locationBloc.locationResult?.position != null) const NearByEvent(),
+          const SizedBox(height: 16),
+          const OrganizerList(),
+          const SizedBox(height: 16),
+          const PopularEvent(),
+          const SizedBox(height: 16),
+          const LatestEvent(),
         ],
       ),
     );
@@ -158,7 +169,7 @@ class _ExploreScreenState extends State<ExploreScreen>
           delegate: HeaderStickyDelegate(),
           pinned: true,
         ),
-        const SliverToBoxAdapter(
+        SliverToBoxAdapter(
           child: body,
         )
       ],
@@ -279,15 +290,17 @@ class _ExploreScreenState extends State<ExploreScreen>
                         ),
                         Text("Filters", style: AppStyles.h4),
                         BlocBuilder<FetchCategoriesBloc, List<Category>>(
-                          builder: (BuildContext context, List<Category> state) {
-                            if(state.isNotEmpty){
+                          builder:
+                              (BuildContext context, List<Category> state) {
+                            if (state.isNotEmpty) {
                               return SizedBox(
                                 height: 120,
                                 child: ListView.builder(
                                   itemCount: state.length,
                                   scrollDirection: Axis.horizontal,
                                   itemBuilder: (context, index) {
-                                    bool isSelected = filterBloc.selectedFilterItems
+                                    bool isSelected = filterBloc
+                                        .selectedFilterItems
                                         .contains(state[index]);
                                     return Padding(
                                       padding: const EdgeInsets.symmetric(
@@ -309,7 +322,8 @@ class _ExploreScreenState extends State<ExploreScreen>
                                                 border: Border.all(
                                                   color: isSelected
                                                       ? Colors.white
-                                                      : AppColors.borderOutlineColor,
+                                                      : AppColors
+                                                          .borderOutlineColor,
                                                   width: 1.5,
                                                 ),
                                                 color: isSelected
@@ -327,9 +341,10 @@ class _ExploreScreenState extends State<ExploreScreen>
                                             const SizedBox(height: 4),
                                             Expanded(
                                                 child: Text(
-                                                  state[index].categoryName,
-                                                  style: const TextStyle(fontSize: 16),
-                                                ))
+                                              state[index].categoryName,
+                                              style:
+                                                  const TextStyle(fontSize: 16),
+                                            ))
                                           ],
                                         ),
                                       ),

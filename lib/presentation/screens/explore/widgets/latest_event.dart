@@ -39,7 +39,9 @@ class _LatestEventState extends State<LatestEvent> {
     Query<Event> eventsQuery;
 
     eventsQuery =
-        FirebaseFirestore.instance.collection('events').withConverter<Event>(
+        FirebaseFirestore.instance.collection('events')
+        .where("isDelete", isEqualTo: false)
+        .withConverter<Event>(
               fromFirestore: (snapshot, _) => Event.fromJson(snapshot.data()!),
               toFirestore: (event, _) => event.toMap(),
             );

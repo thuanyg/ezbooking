@@ -509,21 +509,25 @@ class _SearchResultPageState extends State<SearchResultPage> {
                   ),
                   SizedBox(height: 8),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Icon(Icons.location_on,
-                              size: 16, color: AppColors.primaryColor),
-                          SizedBox(width: 8),
-                          Text(
-                            event.location,
-                            style: TextStyle(color: Colors.grey[700]),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Icon(Icons.location_on,
+                                size: 16, color: AppColors.primaryColor),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                event.location,
+                                style: TextStyle(color: Colors.grey[700]),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 10),
                       Text(
                         '\$${event.ticketPrice.toStringAsFixed(2)}',
                         style: TextStyle(

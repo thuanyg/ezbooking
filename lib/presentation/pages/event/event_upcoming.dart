@@ -5,6 +5,7 @@ import 'package:ezbooking/core/config/app_styles.dart';
 import 'package:ezbooking/core/utils/utils.dart';
 import 'package:ezbooking/data/models/event.dart';
 import 'package:ezbooking/presentation/pages/event/event_detail.dart';
+import 'package:ezbooking/presentation/pages/event/widgets/shimmer_event_card.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/get_location_bloc.dart';
 import 'package:ezbooking/presentation/widgets/cards.dart';
 import 'package:firebase_ui_firestore/firebase_ui_firestore.dart';
@@ -56,6 +57,7 @@ class _EventUpComingPageState extends State<EventUpComingPage>
 
     eventsQuery = FirebaseFirestore.instance
         .collection('events')
+        .where("isDelete", isEqualTo: false)
         .where("date", isGreaterThan: Timestamp.now())
         // .where("geopoint.latitude", isGreaterThanOrEqualTo: boundingBox['minLat'])
         // .where("geopoint.latitude", isLessThanOrEqualTo: boundingBox['maxLat'])
@@ -70,11 +72,9 @@ class _EventUpComingPageState extends State<EventUpComingPage>
     return FirestoreListView<Event>(
       query: eventsQuery,
       loadingBuilder: (context) {
-        return Center(
-          child: Lottie.asset(
-            "assets/animations/loading.json",
-            height: 80,
-          ),
+        return ListView.builder(
+          itemCount: 8,
+          itemBuilder: (context, index) => const EventStandardCardShimmer(),
         );
       },
       errorBuilder: (context, error, stackTrace) => const Center(

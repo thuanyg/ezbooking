@@ -5,6 +5,7 @@ import 'package:ezbooking/core/config/app_styles.dart';
 import 'package:ezbooking/core/utils/utils.dart';
 import 'package:ezbooking/data/models/event.dart';
 import 'package:ezbooking/presentation/pages/event/event_detail.dart';
+import 'package:ezbooking/presentation/pages/event/widgets/shimmer_event_card.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/get_location_bloc.dart';
 import 'package:ezbooking/presentation/widgets/cards.dart';
 import 'package:firebase_ui_firestore/firebase_ui_firestore.dart';
@@ -53,77 +54,72 @@ class _EventScreenState extends State<EventScreen>
     final getLocationBloc = BlocProvider.of<GetLocationBloc>(context);
     final currentPosition = getLocationBloc.locationResult?.position;
 
-    if (currentPosition != null) {
-      // Kiểm tra và đổi vị trí nếu latitude > 90
-      double latitude = currentPosition.latitude;
-      double longitude = currentPosition.longitude;
-      if (latitude > 90) {
-        final temp = latitude;
-        latitude = longitude;
-        longitude = temp;
-      }
-
-      const double earthRadiusKm = 6371.0;
-      const double radiusInKm = 100; // Bán kính 100km
-
-// Tính toán bounding box với hệ số điều chỉnh
-      double latKmRatio = 1 / 111.0; // 1 độ latitude ≈ 111km
-      double lngKmRatio =
-          1 / (111.0 * cos(latitude * pi / 180.0)); // Điều chỉnh theo latitude
-
-// Tính delta cho latitude và longitude
-      double latDelta = radiusInKm * latKmRatio * 1.2; // Thêm 20% margin
-      double lngDelta = radiusInKm * lngKmRatio * 1.2;
-
-// Tính bounds
-      double minLat = latitude - latDelta;
-      double maxLat = latitude + latDelta;
-      double minLng = longitude - lngDelta;
-      double maxLng = longitude + lngDelta;
-
-// Debug logs
-      print("Search center: $latitude, $longitude");
-      print("Radius: ${radiusInKm}km");
-      print(
-          "Latitude range: $minLat to $maxLat (delta: ${maxLat - minLat} degrees)");
-      print(
-          "Longitude range: $minLng to $maxLng (delta: ${maxLng - minLng} degrees)");
-
-      eventsQuery = FirebaseFirestore.instance
-          .collection('events')
-          .where("geopoint", isGreaterThanOrEqualTo: GeoPoint(minLat, minLng))
-          .where("geopoint", isLessThanOrEqualTo: GeoPoint(maxLat, maxLng))
-          .where('name', isGreaterThanOrEqualTo: searchQuery)
-          .where('name', isLessThan: '$searchQuery\uf8ff') // Filter by prefix
-          .withConverter<Event>(
-            fromFirestore: (snapshot, _) => Event.fromJson(snapshot.data()!),
-            toFirestore: (event, _) => event.toMap(),
-          );
-    } else {
-      eventsQuery = FirebaseFirestore.instance
-          .collection('events')
-          .where('name', isGreaterThanOrEqualTo: searchQuery)
-          .where('name', isLessThan: '$searchQuery\uf8ff') // Filter by prefix
-          .withConverter<Event>(
-            fromFirestore: (snapshot, _) => Event.fromJson(snapshot.data()!),
-            toFirestore: (event, _) => event.toMap(),
-          );
-    }
+//     if (currentPosition != null) {
+//       // Kiểm tra và đổi vị trí nếu latitude > 90
+//       double latitude = currentPosition.latitude;
+//       double longitude = currentPosition.longitude;
+//       if (latitude > 90) {
+//         final temp = latitude;
+//         latitude = longitude;
+//         longitude = temp;
+//       }
+//
+//       const double earthRadiusKm = 6371.0;
+//       const double radiusInKm = 100; // Bán kính 100km
+//
+// // Tính toán bounding box với hệ số điều chỉnh
+//       double latKmRatio = 1 / 111.0; // 1 độ latitude ≈ 111km
+//       double lngKmRatio =
+//           1 / (111.0 * cos(latitude * pi / 180.0)); // Điều chỉnh theo latitude
+//
+// // Tính delta cho latitude và longitude
+//       double latDelta = radiusInKm * latKmRatio * 1.2; // Thêm 20% margin
+//       double lngDelta = radiusInKm * lngKmRatio * 1.2;
+//
+// // Tính bounds
+//       double minLat = latitude - latDelta;
+//       double maxLat = latitude + latDelta;
+//       double minLng = longitude - lngDelta;
+//       double maxLng = longitude + lngDelta;
+//
+// // Debug logs
+//       print("Search center: $latitude, $longitude");
+//       print("Radius: ${radiusInKm}km");
+//       print(
+//           "Latitude range: $minLat to $maxLat (delta: ${maxLat - minLat} degrees)");
+//       print(
+//           "Longitude range: $minLng to $maxLng (delta: ${maxLng - minLng} degrees)");
+//
+//       eventsQuery = FirebaseFirestore.instance
+//           .collection('events')
+//           .where("geopoint", isGreaterThanOrEqualTo: GeoPoint(minLat, minLng))
+//           .where("geopoint", isLessThanOrEqualTo: GeoPoint(maxLat, maxLng))
+//           .where('name', isGreaterThanOrEqualTo: searchQuery)
+//           .where('name', isLessThan: '$searchQuery\uf8ff') // Filter by prefix
+//           .withConverter<Event>(
+//             fromFirestore: (snapshot, _) => Event.fromJson(snapshot.data()!),
+//             toFirestore: (event, _) => event.toMap(),
+//           );
+//     } else {
+    eventsQuery = FirebaseFirestore.instance
+        .collection('events')
+        .where("isDelete", isEqualTo: false)
+        .where('name', isGreaterThanOrEqualTo: searchQuery)
+        .where('name', isLessThan: '$searchQuery\uf8ff') // Filter by prefix
+        .withConverter<Event>(
+          fromFirestore: (snapshot, _) => Event.fromJson(snapshot.data()!),
+          toFirestore: (event, _) => event.toMap(),
+        );
+    // }
 
     return FirestoreListView<Event>(
       query: eventsQuery,
-      loadingBuilder: (context) => Shimmer.fromColors(
-        baseColor: Colors.white54,
-        highlightColor: Colors.white,
-        child: EventStandardCard(
-          distance: "",
-          title: "",
-          date: "",
-          imageLink: "",
-          location: "",
-          onPressed: () {},
-        ),
-      ),
+      loadingBuilder: (context) {
+        return ListView.builder(
+          itemCount: 8,
+          itemBuilder: (context, index) => const EventStandardCardShimmer(),
+        );
+      },
       errorBuilder: (context, error, stackTrace) => const Center(
         child: Text("Error", style: TextStyle(color: Colors.black)),
       ),
@@ -150,7 +146,9 @@ class _EventScreenState extends State<EventScreen>
           date: DateFormat('EEE, MMM d - yyyy • h:mm a').format(event.date),
           imageLink: event.poster ?? "",
           location: event.location,
-          distance: currentPosition != null ? '${AppUtils.convertMetersToKilometers(distance)} km' : "",
+          distance: currentPosition != null
+              ? '${AppUtils.convertMetersToKilometers(distance)} km'
+              : "",
           // Display distance in km
           onPressed: () {
             Navigator.of(context).pushNamed(

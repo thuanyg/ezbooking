@@ -5,7 +5,9 @@ abstract class LatestEventEvent {}
 
 class FetchLatestEvent extends LatestEventEvent {
   final int limit;
-  final Position position;
+  final Position? position;
+  final bool isFetchApproximately;
 
-  FetchLatestEvent({required this.limit, required this.position});
+  FetchLatestEvent(
+      {required this.isFetchApproximately, required this.limit, this.position});
 }

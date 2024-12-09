@@ -44,7 +44,6 @@ List<Color> categoryColors = const [
 ];
 List<DrawerItem> drawerItems = [
   DrawerItem("${assetImageLink}ic_user_drawer.png", "My Profile"),
-  DrawerItem("${assetImageLink}ic_calender_drawer.png", "Calender"),
   DrawerItem("${assetImageLink}ic_bookmark_drawer.png", "Favorites"),
   DrawerItem("${assetImageLink}ic_mail_drawer.png", "Contact Us"),
   DrawerItem("${assetImageLink}ic_setting_drawer.png", "Settings"),

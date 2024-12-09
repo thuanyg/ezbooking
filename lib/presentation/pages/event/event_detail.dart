@@ -20,10 +20,6 @@ import 'package:ezbooking/presentation/pages/event/bloc/fetch_comment_bloc.dart'
 import 'package:ezbooking/presentation/pages/event/bloc/fetch_comment_event.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/fetch_comment_state.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/going_event_cubit.dart';
-import 'package:ezbooking/presentation/pages/home/home_page.dart';
-import 'package:ezbooking/presentation/pages/organizer/bloc/events_organizer_bloc.dart';
-import 'package:ezbooking/presentation/pages/organizer/bloc/events_organizer_event.dart';
-import 'package:ezbooking/presentation/pages/organizer/bloc/events_organizer_state.dart';
 import 'package:ezbooking/presentation/pages/ticket_booking/ticket_booking_page.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_bloc.dart';
 import 'package:ezbooking/presentation/widgets/button.dart';
@@ -34,7 +30,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:photo_view/photo_view.dart';
@@ -106,7 +101,6 @@ class _EventDetailState extends State<EventDetail> {
 
   @override
   Widget build(BuildContext context) {
-    print("object");
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -261,7 +255,7 @@ class _EventDetailState extends State<EventDetail> {
           Expanded(
             child: MainElevatedButton(
               width: MediaQuery.of(context).size.width - 48,
-              textButton: "BUY TICKET - \$${event.ticketPrice}",
+              textButton: event.ticketPrice == 0.0 ? "FREE TICKET" : "BUY TICKET - \$${event.ticketPrice}",
               iconName: "ic_button_next.png",
               radius: BorderRadius.circular(10),
               onTap: () => Navigator.pushNamed(
@@ -277,8 +271,6 @@ class _EventDetailState extends State<EventDetail> {
   }
 
   SingleChildScrollView buildEventBody(Event event) {
-    Future<String?> eventAddressFuture = mapService.getFullAddress(
-        lat: event.geoPoint!.latitude, long: event.geoPoint!.longitude);
     return SingleChildScrollView(
       child: Container(
         margin: const EdgeInsets.only(bottom: 100),
@@ -296,15 +288,10 @@ class _EventDetailState extends State<EventDetail> {
                     iconName: "ic_event.png",
                   ),
                   const SizedBox(height: 20),
-                  FutureBuilder<String?>(
-                    future: eventAddressFuture,
-                    builder: (context, snapshot) {
-                      return EventSubInformation(
-                        title: event.location,
-                        subtitle: snapshot.data ?? "Undefined",
-                        iconName: "ic_location.png",
-                      );
-                    },
+                  EventSubInformation(
+                    title: "Location",
+                    subtitle: event.location,
+                    iconName: "ic_location.png",
                   ),
                   const SizedBox(height: 20),
                   Organizer(
@@ -1380,7 +1367,7 @@ class buildHeaderSliver extends SliverPersistentHeaderDelegate {
         child: Center(
           child: Text(
             event.name,
-            maxLines: 2,
+            maxLines: 3,
             style: AppStyles.h3,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,

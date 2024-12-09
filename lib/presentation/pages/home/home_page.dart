@@ -14,6 +14,7 @@ import 'package:ezbooking/presentation/pages/maps/bloc/location_state.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_bloc.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_event.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_state.dart';
+import 'package:ezbooking/presentation/pages/user_profile/my_profile_page.dart';
 import 'package:ezbooking/presentation/screens/event/event_screen.dart';
 import 'package:ezbooking/presentation/screens/explore/explore_screen.dart';
 import 'package:ezbooking/presentation/screens/profile/profile_screen.dart';
@@ -189,14 +190,17 @@ class _HomePageState extends State<HomePage> {
                                   onTap: () {
                                     switch (index) {
                                       case 0:
+                                        Navigator.pushNamed(context,
+                                            MyProfilePage.routeName);
+                                        break;
                                       case 1:
-                                      case 2:
                                         Navigator.pushNamed(context,
                                             FavoritesEventsPage.routeName);
-                                      case 3:
+                                        break;
+                                      case 2:
                                         Navigator.pushNamed(
                                             context, ContactUsPage.routeName);
-                                      case 4:
+                                      case 3:
                                         Navigator.pop(context);
                                         setState(() {
                                           _tabSelectedIndex = 3;
@@ -207,10 +211,10 @@ class _HomePageState extends State<HomePage> {
                                             curve: Easing.standard,
                                           );
                                         });
-                                      case 5:
+                                      case 4:
                                         Navigator.pushNamed(
                                             context, HelpAndQAPage.routeName);
-                                      case 6:
+                                      case 5:
                                         DialogUtils.showConfirmationDialog(
                                           context: context,
                                           title:
@@ -268,19 +272,6 @@ class _HomePageState extends State<HomePage> {
                     ProfileScreen()
                   ],
                 ),
-                // floatingActionButton: FloatingActionButton(
-                //   onPressed: () {},
-                //   backgroundColor: AppColors.primaryColor,
-                //   shape: RoundedRectangleBorder(
-                //       borderRadius: BorderRadius.circular(50)),
-                //   child: const Icon(
-                //     Icons.add,
-                //     color: Colors.white,
-                //     size: 28,
-                //   ),
-                // ),
-                // floatingActionButtonLocation:
-                //     FloatingActionButtonLocation.centerDocked,
                 bottomNavigationBar: buildBottomNavigationBar(),
               ),
             );

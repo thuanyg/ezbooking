@@ -5,6 +5,7 @@ import 'package:ezbooking/core/utils/image_helper.dart';
 import 'package:ezbooking/core/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shimmer/shimmer.dart';
 
 class UpcomingCard extends StatelessWidget {
   const UpcomingCard({
@@ -22,8 +23,8 @@ class UpcomingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 240,
-      width: 237,
+      height: 200,
+      width: 200,
       decoration: BoxDecoration(
         color: const Color(0xfff6fbff),
         borderRadius: BorderRadius.circular(18),
@@ -37,8 +38,8 @@ class UpcomingCard extends StatelessWidget {
                 ImageHelper.loadNetworkImage(
                   imageLink,
                   radius: BorderRadius.circular(6),
-                  height: 155,
-                  width: 230,
+                  height: 120,
+                  width: 200,
                   fit: BoxFit.fill,
                 ),
                 Positioned(
@@ -76,8 +77,12 @@ class UpcomingCard extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 6),
                   child: Text(
                     title,
-                    style: AppStyles.title1,
-                    maxLines: 1,
+                    style: AppStyles.title1.copyWith(
+                      color: const Color(0xff333333),
+                      fontWeight: FontWeight.w400,
+                      fontSize: 15,
+                    ),
+                    maxLines: 2,
                     textAlign: TextAlign.start,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -175,7 +180,11 @@ class PopularCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: AppStyles.title1,
+                      style: AppStyles.title1.copyWith(
+                        color: const Color(0xff333333),
+                        fontWeight: FontWeight.w400,
+                        fontSize: 15,
+                      ),
                       maxLines: 2,
                       textAlign: TextAlign.start,
                       overflow: TextOverflow.ellipsis,
@@ -288,7 +297,11 @@ class EventStandardCard extends StatelessWidget {
                       ),
                       Text(
                         title,
-                        style: AppStyles.title1,
+                        style: AppStyles.title1.copyWith(
+                          color: const Color(0xff333333),
+                          fontWeight: FontWeight.w400,
+                          fontSize: 15,
+                        ),
                         maxLines: 2,
                         textAlign: TextAlign.start,
                         overflow: TextOverflow.ellipsis,
@@ -315,13 +328,14 @@ class EventStandardCard extends StatelessWidget {
                               ),
                             ),
                           ),
+                          const SizedBox(width: 16),
                           Text(
                             distance,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: AppStyles.title2.copyWith(
-                              color: Colors.grey,
-                              fontSize: 12,
+                              color: Colors.grey[400],
+                              fontSize: 11,
                               fontWeight: FontWeight.w400,
                               fontStyle: FontStyle.italic,
                               overflow: TextOverflow.ellipsis,

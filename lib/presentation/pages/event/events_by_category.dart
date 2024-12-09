@@ -231,7 +231,7 @@ class _EventsByCategoryPageState extends State<EventsByCategoryPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
               child: Image.network(
                 event.thumbnail ?? event.poster ?? '',
                 height: 200,
@@ -264,35 +264,39 @@ class _EventsByCategoryPageState extends State<EventsByCategoryPage> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       Icon(Icons.calendar_today,
                           size: 16, color: AppColors.primaryColor),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(
                         _formatDate(event.date),
                         style: TextStyle(color: Colors.grey[700]),
                       ),
                     ],
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        children: [
-                          Icon(Icons.location_on,
-                              size: 16, color: AppColors.primaryColor),
-                          SizedBox(width: 8),
-                          Text(
-                            event.location,
-                            style: TextStyle(color: Colors.grey[700]),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Icon(Icons.location_on,
+                                size: 16, color: AppColors.primaryColor),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                event.location,
+                                style: TextStyle(color: Colors.grey[700]),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+                      const SizedBox(width: 8),
                       Text(
                         '\$${event.ticketPrice.toStringAsFixed(2)}',
                         style: TextStyle(

@@ -11,7 +11,7 @@ class UpcomingEventBloc extends Bloc<UpcomingEventEvent, UpcomingEventState> {
     on<FetchUpcomingEvent>((event, emit) async {
       try {
         emit(UpcomingEventLoading());
-        final events = event.isFetchApproximately
+        final events = !event.isFetchApproximately
             ? await _fetchEventsUpcomingUseCase(limit: event.limit)
             : await _fetchEventsUpcomingUseCase.getApproximately(
                 limit: event.limit,

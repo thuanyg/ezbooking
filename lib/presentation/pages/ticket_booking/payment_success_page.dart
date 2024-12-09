@@ -4,6 +4,7 @@ import 'package:ezbooking/presentation/pages/ticket_booking/view_ticket_page.dar
 import 'package:flutter/material.dart';
 import 'package:ezbooking/data/models/order.dart';
 import 'package:ezbooking/data/models/event.dart';
+import 'package:screenshot/screenshot.dart';
 
 class PaymentSuccessPage extends StatelessWidget {
   static const String routeName = "PaymentSuccessPage";
@@ -87,11 +88,25 @@ class PaymentSuccessPage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label, style: const TextStyle(color: Colors.black54)),
-          Text(value,
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold, color: Colors.black87))
+          const SizedBox(width: 10),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                value,
+                maxLines: 1,
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+          )
         ],
       ),
     );
