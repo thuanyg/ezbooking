@@ -4,6 +4,7 @@ import 'package:ezbooking/data/models/ticket.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:screenshot/screenshot.dart';
 
 class ETicket extends StatelessWidget {
   final Ticket ticket;
@@ -96,6 +97,7 @@ class ETicket extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
@@ -104,11 +106,17 @@ class ETicket extends StatelessWidget {
               fontSize: 14,
             ),
           ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontWeight: FontWeight.w500,
-              fontSize: 14,
+          const SizedBox(width: 15),
+          Expanded(
+            child: Text(
+              value,
+              maxLines: 2,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
         ],

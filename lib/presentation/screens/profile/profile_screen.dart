@@ -6,6 +6,7 @@ import 'package:ezbooking/presentation/pages/event/favorite_event_page.dart';
 import 'package:ezbooking/presentation/pages/login/bloc/login_bloc.dart';
 import 'package:ezbooking/presentation/pages/login/bloc/login_event.dart';
 import 'package:ezbooking/presentation/pages/login/login_page.dart';
+import 'package:ezbooking/presentation/pages/order/order_history_page.dart';
 import 'package:ezbooking/presentation/pages/payment_method/payment_method_page.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_bloc.dart';
 import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_state.dart';
@@ -177,6 +178,17 @@ class ProfileScreen extends StatelessWidget {
               onTap: () =>
                   Navigator.pushNamed(context, FavoritesEventsPage.routeName),
             ),
+            const Divider(
+              color: Colors.grey,
+              height: 1,
+              thickness: .1,
+            ),
+            buildSettingItem(
+                title: "Orders",
+                icon: const Icon(Icons.inventory_2_outlined),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => const OrderHistoryPage(),
+                    ))),
             const Divider(
               color: Colors.grey,
               height: 1,

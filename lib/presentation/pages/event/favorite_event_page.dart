@@ -31,7 +31,7 @@ class FavoritesEventsPage extends StatelessWidget {
             return Center(
               child: Lottie.asset(
                 "assets/animations/loading.json",
-                height: 80,
+                height: 60,
               ),
             );
           }

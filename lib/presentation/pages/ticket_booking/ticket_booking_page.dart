@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart' as cf;
 import 'package:ezbooking/core/config/app_colors.dart';
 import 'package:ezbooking/core/config/constants.dart';
+import 'package:ezbooking/core/services/mail_service.dart';
 import 'package:ezbooking/core/services/notification_service.dart';
 import 'package:ezbooking/core/utils/dialogs.dart';
 import 'package:ezbooking/core/utils/utils.dart';
 import 'package:ezbooking/data/models/event.dart';
+import 'package:ezbooking/data/models/order_mail_request.dart';
 import 'package:ezbooking/data/models/ticket.dart';
 import 'package:ezbooking/data/models/vn_pay_response.dart';
 import 'package:ezbooking/presentation/pages/ticket_booking/bloc/tickets/create_ticket_bloc.dart';
@@ -376,6 +378,23 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                                                   );
                                                 },
                                               );
+
+                                              final orderMailRequest = OrderMailRequest(
+                                                email: userInfoBloc.user?.email ?? "",
+                                                orderDetails: OrderDetails(
+                                                  orderID: order?.id ?? "",
+                                                  customerEmail: userInfoBloc.user?.email,
+                                                  customerName: userInfoBloc.user?.fullName,
+                                                  totalAmount: _calculateTotalAmount(order?.ticketQuantity, order?.ticketPrice),
+                                                  tickets: tickets.map((ticket) => Tickets(
+                                                      name: ticket.ticketType,
+                                                      quantity: order?.ticketQuantity ?? 1,
+                                                      price: ticket.ticketPrice.toInt(),
+                                                  )).toList(),
+                                                )
+                                              );
+                                              await MailService.sendOrderEmail(orderMailRequest);
+
                                               await Future.delayed(
                                                 const Duration(
                                                     milliseconds: 500),
@@ -547,6 +566,15 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
         ),
       ),
     );
+  }
+
+  int _calculateTotalAmount(int? ticketQuantity, double? ticketPrice) {
+    // Ensure the ticketQuantity and ticketPrice are not null and valid
+    if (ticketQuantity != null && ticketPrice != null) {
+      // Calculate the total amount safely
+      return (ticketQuantity * ticketPrice).toInt(); // Convert the result to an integer
+    }
+    return 0; // Return 0 if either value is null or invalid
   }
 
   Widget _buildTextField({

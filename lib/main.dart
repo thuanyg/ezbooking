@@ -23,6 +23,7 @@ import 'package:ezbooking/presentation/screens/explore/bloc/latest/latest_event_
 import 'package:ezbooking/presentation/screens/explore/bloc/organizer/organizer_list_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/popular/popular_event_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/upcoming/upcoming_event_bloc.dart';
+import 'package:ezbooking/presentation/screens/profile/fetch_orders_bloc.dart';
 import 'package:ezbooking/presentation/screens/ticket/bloc/get_ticket_cubit.dart';
 import 'package:ezbooking/presentation/screens/ticket/bloc/get_tickets_bloc.dart';
 import 'package:ezbooking/routes.dart';
@@ -66,6 +67,7 @@ void main() async {
         BlocProvider(create: (_) => sl<EventsOrganizerBloc>()),
         BlocProvider(create: (_) => sl<OrganizerListBloc>()),
         BlocProvider(create: (_) => sl<FetchCategoriesBloc>()),
+        BlocProvider(create: (_) => FetchOrdersCubit()),
       ],
       child: const MyApp(),
     ),
