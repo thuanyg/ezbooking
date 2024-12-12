@@ -31,4 +31,12 @@ class FetchCommentBloc extends Bloc<FetchCommentEvent, FetchCommentState> {
       emit(FetchCommentsSuccess(comments));
     }
   }
+  void removeComment(Comment comment) {
+    final currentState = state;
+    if (currentState is FetchCommentsSuccess) {
+      List<Comment> comments = currentState.comments;
+      comments.remove(comment);
+      emit(FetchCommentsSuccess(comments));
+    }
+  }
 }

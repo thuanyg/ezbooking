@@ -93,22 +93,23 @@ class _PaymentPageState extends State<PaymentPage> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        DialogUtils.showConfirmationDialog(
+        // Sử dụng Future để chờ người dùng xác nhận
+        bool shouldExit = await DialogUtils.showConfirmationDialog(
           context: context,
           title: "Are you sure you want to exit?",
           textCancelButton: "Cancel",
           textAcceptButton: "OK",
           acceptPressed: () {
-            print("================================");
-            Navigator.pop<VnpayResponse>(
-                context, VnpayResponse.fromResponseCode("24"));
+            Navigator.pop(context);
+            final response = VnpayResponse.fromResponseCode("24");
+            Navigator.pop(context, response);
           },
         );
-        return true;
+        return shouldExit;
       },
       child: Scaffold(
         body: Padding(
-            padding: EdgeInsets.only(top: kToolbarHeight - 20),
+            padding: const EdgeInsets.only(top: kToolbarHeight - 20),
             child: WebViewWidget(controller: controller)),
       ),
     );

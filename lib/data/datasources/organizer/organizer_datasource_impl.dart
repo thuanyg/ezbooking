@@ -17,12 +17,12 @@ class OrganizerDatasourceImpl extends OrganizerDatasource {
         throw Exception("Organizer with ID $organizerID does not exist.");
       }
 
-      final organizer = Organizer.fromJson(organizerDoc.data() as Map<String, dynamic>);
+      final organizer =
+          Organizer.fromJson(organizerDoc.data() as Map<String, dynamic>);
       return organizer;
     } catch (e) {
       print("Error fetching organizer: $e");
       rethrow;
     }
   }
-
 }

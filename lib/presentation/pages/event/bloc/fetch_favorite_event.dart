@@ -4,3 +4,8 @@ class FetchFavorite extends FetchFavoriteEvent {
 
   FetchFavorite(this.userID);
 }
+class SearchFavorite extends FetchFavoriteEvent {
+  final String query;
+
+  SearchFavorite(this.query);
+}

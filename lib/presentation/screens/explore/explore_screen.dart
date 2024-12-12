@@ -10,6 +10,8 @@ import 'package:ezbooking/presentation/pages/event/event_upcoming.dart';
 import 'package:ezbooking/presentation/pages/event/events_by_category.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/get_location_bloc.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/location_state.dart';
+import 'package:ezbooking/presentation/pages/notification/notification_page.dart';
+import 'package:ezbooking/presentation/pages/user_profile/bloc/user_info_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/category/fetch_categories_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/filter/filter_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/filter/filter_event.dart';
@@ -62,6 +64,10 @@ class _ExploreScreenState extends State<ExploreScreen>
     popularEventBloc = BlocProvider.of<PopularEventBloc>(context);
     organizerListBloc = BlocProvider.of<OrganizerListBloc>(context);
 
+    fetchDataInitial();
+  }
+
+  fetchDataInitial() {
     // Fetch Data Initial
     fetchCategoriesBloc.fetchCategories();
     if (locationBloc.locationResult?.position == null) {
@@ -149,7 +155,8 @@ class _ExploreScreenState extends State<ExploreScreen>
         children: [
           const UpComingEvent(),
           const SizedBox(height: 16),
-          if (locationBloc.locationResult?.position != null) const NearByEvent(),
+          if (locationBloc.locationResult?.position != null)
+            const NearByEvent(),
           const SizedBox(height: 16),
           const OrganizerList(),
           const SizedBox(height: 16),
@@ -160,19 +167,28 @@ class _ExploreScreenState extends State<ExploreScreen>
       ),
     );
 
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(
-          child: header,
-        ),
-        SliverPersistentHeader(
-          delegate: HeaderStickyDelegate(),
-          pinned: true,
-        ),
-        SliverToBoxAdapter(
-          child: body,
-        )
-      ],
+    return RefreshIndicator(
+      edgeOffset: 170,
+      displacement: 50,
+      color: AppColors.primaryColor,
+      backgroundColor: Colors.white,
+      onRefresh: () async {
+        fetchDataInitial();
+      },
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: header,
+          ),
+          SliverPersistentHeader(
+            delegate: HeaderStickyDelegate(),
+            pinned: true,
+          ),
+          SliverToBoxAdapter(
+            child: body,
+          )
+        ],
+      ),
     );
   }
 
@@ -613,7 +629,20 @@ Widget buildHeaderStickyWidget(BuildContext context) {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-          child: ImageHelper.loadAssetImage("${assetImageLink}ic_ring.png"),
+          child: GestureDetector(
+            onTap: () {
+              final userInfoBloc = BlocProvider.of<UserInfoBloc>(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => NotificationPage(
+                    userId: userInfoBloc.user?.id ?? "",
+                  ),
+                ),
+              );
+            },
+            child: ImageHelper.loadAssetImage("${assetImageLink}ic_ring.png"),
+          ),
         ),
       ],
     ),

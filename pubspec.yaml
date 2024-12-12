@@ -57,6 +57,7 @@ dependencies:
   firebase_messaging: ^15.1.6
   cloud_functions: ^5.2.0
   google_sign_in: ^6.2.2
+  app_links: ^6.3.3
 
 #  vnpay_flutter: ^1.0.3
 dependency_overrides:

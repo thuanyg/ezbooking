@@ -231,14 +231,14 @@ class ProfileScreen extends StatelessWidget {
               height: 1,
               thickness: .1,
             ),
-            buildSettingItem(
-              title: "Accessibility",
-              icon: const Icon(Icons.settings_applications_outlined),
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text("This feature are being developed!")));
-              },
-            ),
+            // buildSettingItem(
+            //   title: "Accessibility",
+            //   icon: const Icon(Icons.settings_applications_outlined),
+            //   onTap: () {
+            //     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            //         content: Text("This feature are being developed!")));
+            //   },
+            // ),
             const Divider(
               color: Colors.grey,
               height: 1,

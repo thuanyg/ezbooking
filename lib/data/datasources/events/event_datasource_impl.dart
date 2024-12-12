@@ -23,9 +23,8 @@ class EventDatasourceImpl extends EventDatasource {
     required Position currentPosition,
   }) async {
     try {
-      Query query = _eventsCollection
-          .where("isDelete", isEqualTo: false)
-          .limit(limit);
+      Query query =
+          _eventsCollection.where("isDelete", isEqualTo: false).limit(limit);
 
       final QuerySnapshot querySnapshot = await query.get();
 
@@ -420,6 +419,7 @@ class EventDatasourceImpl extends EventDatasource {
       final docs = await FirebaseFirestore.instance
           .collection('events')
           .where('organizer', isEqualTo: organizerID)
+          .where("isDelete", isEqualTo: false)
           .get();
 
       final events =

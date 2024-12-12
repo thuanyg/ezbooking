@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ezbooking/core/config/app_colors.dart';
 import 'package:ezbooking/core/config/app_styles.dart';
 import 'package:ezbooking/core/services/google_map_service.dart';
+import 'package:ezbooking/core/utils/dialogs.dart';
 import 'package:ezbooking/core/utils/image_helper.dart';
 import 'package:ezbooking/core/utils/utils.dart';
 import 'package:ezbooking/data/models/comment.dart';
@@ -102,49 +103,62 @@ class _EventDetailState extends State<EventDetail> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
-      body: SafeArea(
-        child: BlocBuilder<EventDetailBloc, EventDetailState>(
-          builder: (context, state) {
-            if (state is EventDetailLoading) {
-              return Center(
-                child: Lottie.asset(
-                  "assets/animations/loading.json",
-                  height: 80,
-                ),
-              );
-            }
+      body: RefreshIndicator(
+        edgeOffset: 170,
+        displacement: 50,
+        color: AppColors.primaryColor,
+        backgroundColor: Colors.white,
+        onRefresh: () async {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            String? eventID = ModalRoute.of(context)?.settings.arguments as String?;
+            loadData(eventID);
+          });
+        },
+        child: SafeArea(
+          child: BlocBuilder<EventDetailBloc, EventDetailState>(
+            builder: (context, state) {
+              if (state is EventDetailLoading) {
+                return Center(
+                  child: Lottie.asset(
+                    "assets/animations/loading.json",
+                    height: 80,
+                  ),
+                );
+              }
 
-            if (state is EventDetailLoaded) {
-              return CustomScrollView(
-                controller: scrollController,
-                slivers: [
-                  SliverAppBar(
-                    automaticallyImplyLeading: false,
-                    expandedHeight: 268,
-                    flexibleSpace: FlexibleSpaceBar(
-                      collapseMode: CollapseMode.pin,
-                      stretchModes: const [StretchMode.blurBackground],
-                      background: buildHeader(
-                        context,
-                        state.event,
-                        goingEventCubit,
+              if (state is EventDetailLoaded) {
+                return CustomScrollView(
+                  controller: scrollController,
+                  slivers: [
+                    SliverAppBar(
+                      automaticallyImplyLeading: false,
+                      expandedHeight: 268,
+                      flexibleSpace: FlexibleSpaceBar(
+                        collapseMode: CollapseMode.pin,
+                        stretchModes: const [StretchMode.blurBackground],
+                        background: buildHeader(
+                          context,
+                          state.event,
+                          goingEventCubit,
+                        ),
                       ),
                     ),
-                  ),
-                  SliverPersistentHeader(
-                    pinned: true,
-                    delegate: buildHeaderSliver(state.event),
-                  ),
-                  SliverToBoxAdapter(
-                    child: buildEventBody(state.event),
-                  )
-                ],
-              );
-            }
+                    SliverPersistentHeader(
+                      pinned: true,
+                      delegate: buildHeaderSliver(state.event),
+                    ),
+                    SliverToBoxAdapter(
+                      child: buildEventBody(state.event),
+                    )
+                  ],
+                );
+              }
 
-            return const SizedBox.shrink();
-          },
+              return const SizedBox.shrink();
+            },
+          ),
         ),
       ),
       floatingActionButton: BlocBuilder(
@@ -255,7 +269,9 @@ class _EventDetailState extends State<EventDetail> {
           Expanded(
             child: MainElevatedButton(
               width: MediaQuery.of(context).size.width - 48,
-              textButton: event.ticketPrice == 0.0 ? "FREE TICKET" : "BUY TICKET - \$${event.ticketPrice}",
+              textButton: event.ticketPrice == 0.0
+                  ? "FREE TICKET"
+                  : "BUY TICKET - \$${event.ticketPrice}",
               iconName: "ic_button_next.png",
               radius: BorderRadius.circular(10),
               onTap: () => Navigator.pushNamed(
@@ -784,7 +800,6 @@ class _EventDetailState extends State<EventDetail> {
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
                                       ),
-                                      maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     const SizedBox(height: 4),
@@ -973,7 +988,26 @@ class _EventDetailState extends State<EventDetail> {
               ),
             ),
             if (comment.userID == currentUser!.uid)
-              const PopupMenuComment()
+              PopupMenuComment(
+                onDelete: () async {
+                  DialogUtils.showLoadingDialog(context);
+                  try {
+                    await FirebaseFirestore.instance
+                        .collection("comments")
+                        .doc(comment.id)
+                        .delete();
+                    fetchCommentBloc.removeComment(comment);
+                  } on Exception catch (e) {
+                    DialogUtils.showWarningDialog(
+                      context: context,
+                      title: "Something went wrong. Please try again!",
+                      onClickOutSide: () {},
+                    );
+                  } finally {
+                    DialogUtils.hide(context);
+                  }
+                },
+              )
             else
               const SizedBox.shrink(),
           ],
@@ -1136,8 +1170,11 @@ class _EventDetailState extends State<EventDetail> {
 }
 
 class PopupMenuComment extends StatefulWidget {
-  const PopupMenuComment({
+  final VoidCallback onDelete;
+
+  PopupMenuComment({
     super.key,
+    required this.onDelete,
   });
 
   @override
@@ -1154,29 +1191,8 @@ class _PopupMenuCommentState extends State<PopupMenuComment> {
         size: 18,
         color: Colors.black54,
       ),
-      onSelected: (value) {
-        if (value == 'edit') {
-          // Perform editing action without setState
-        } else if (value == 'delete') {
-          // Perform delete action without affecting the state
-        }
-      },
+      onSelected: (value) => widget.onDelete(),
       itemBuilder: (context) => const [
-        PopupMenuItem<String>(
-          value: 'edit',
-          child: Row(
-            children: [
-              Text("Edit"),
-              Expanded(
-                child: Icon(
-                  Icons.edit,
-                  size: 18,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-        ),
         PopupMenuItem<String>(
           value: 'delete',
           child: Row(
@@ -1285,7 +1301,7 @@ Widget buildHeaderStickyWidget(GoingEventCubit bloc, Event event) {
             textButton: "Share",
             onTap: () async {
               try {
-                String shareUrl = "https://htthuan.id.vn/event?id=${event.id}";
+                String shareUrl = "www.teddy.ezbooking.com/event?id=${event.id}";
 
                 await Share.share(
                   shareUrl,
@@ -1363,7 +1379,6 @@ class buildHeaderSliver extends SliverPersistentHeaderDelegate {
       );
     } else {
       return SizedBox(
-        height: 120,
         child: Center(
           child: Text(
             event.name,

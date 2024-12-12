@@ -5,6 +5,7 @@ import 'package:ezbooking/core/utils/image_helper.dart';
 import 'package:ezbooking/core/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:screenshot/screenshot.dart';
 import 'package:shimmer/shimmer.dart';
 
 class UpcomingCard extends StatelessWidget {
@@ -197,15 +198,18 @@ class PopularCard extends StatelessWidget {
                           tintColor: Colors.grey,
                         ),
                         const SizedBox(width: 4.0),
-                        Text(
-                          location,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppStyles.title2.copyWith(
-                            color: Colors.grey,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w400,
-                            fontStyle: FontStyle.italic,
+                        Expanded(
+                          child: Text(
+                            location,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppStyles.title2.copyWith(
+                              color: Colors.grey,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                              overflow: TextOverflow.ellipsis,
+                              fontStyle: FontStyle.italic,
+                            ),
                           ),
                         )
                       ],

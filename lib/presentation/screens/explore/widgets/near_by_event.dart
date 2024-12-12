@@ -36,7 +36,7 @@ class _NearByEventState extends State<NearByEvent> {
           builder: (context, state) {
             if (state is LatestEventLoading) {
               return SizedBox(
-                height: 200,
+                height: 220,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   shrinkWrap: true,

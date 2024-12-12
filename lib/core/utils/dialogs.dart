@@ -100,14 +100,14 @@ class DialogUtils {
     });
   }
 
-  static void showConfirmationDialog({
+  static Future showConfirmationDialog({
     required BuildContext context,
     required String title,
     required String textCancelButton,
     required String textAcceptButton,
     required VoidCallback acceptPressed,
     bool reverseButton = false,
-  }) {
+  }) async {
     showGeneralDialog(
       context: context,
       barrierDismissible: true,

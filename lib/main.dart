@@ -1,3 +1,4 @@
+import 'package:app_links/app_links.dart';
 import 'package:ezbooking/core/services/firebase_cloud_message.dart';
 import 'package:ezbooking/core/services/notification_service.dart';
 import 'package:ezbooking/injection_container.dart';
@@ -10,6 +11,7 @@ import 'package:ezbooking/presentation/pages/event/bloc/fetch_favorite_bloc.dart
 import 'package:ezbooking/presentation/pages/event/bloc/going_event_cubit.dart';
 import 'package:ezbooking/presentation/pages/login/bloc/login_bloc.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/get_location_bloc.dart';
+import 'package:ezbooking/presentation/pages/notification/notification_cubit.dart';
 import 'package:ezbooking/presentation/pages/organizer/bloc/events_organizer_bloc.dart';
 import 'package:ezbooking/presentation/pages/organizer/bloc/organizer_bloc.dart';
 import 'package:ezbooking/presentation/pages/signup/bloc/signup_bloc.dart';
@@ -34,6 +36,11 @@ import 'package:get/get_navigation/src/root/get_material_app.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final appLinks = AppLinks();
+
+  final sub = appLinks.uriLinkStream.listen((uri) {
+    print("URI: ${uri.toString()}");
+  });
   if (Firebase.apps.isEmpty) {
     await Firebase.initializeApp();
   }
@@ -68,6 +75,7 @@ void main() async {
         BlocProvider(create: (_) => sl<OrganizerListBloc>()),
         BlocProvider(create: (_) => sl<FetchCategoriesBloc>()),
         BlocProvider(create: (_) => FetchOrdersCubit()),
+        BlocProvider(create: (_) => NotificationCubit()),
       ],
       child: const MyApp(),
     ),
@@ -79,7 +87,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp (
+    return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'EzBooking',
       theme: ThemeData(

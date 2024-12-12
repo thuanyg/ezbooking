@@ -116,7 +116,7 @@ class _OrganizerListView extends StatelessWidget {
         children: [
           Icon(Icons.group_off_outlined,
               size: 80, color: AppColors.primaryColor.withOpacity(0.5)),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Text(
             'No Organizers Found',
             style: TextStyle(
@@ -124,7 +124,7 @@ class _OrganizerListView extends StatelessWidget {
                 fontWeight: FontWeight.w600,
                 color: Colors.grey[700]),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           const Text(
             'There are currently no organizers in the system.',
             textAlign: TextAlign.center,
@@ -156,9 +156,10 @@ class _OrganizerCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(15),
             boxShadow: [
               BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: Offset(0, 4))
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              )
             ]),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -172,11 +173,11 @@ class _OrganizerCard extends StatelessWidget {
               child: Center(
                 child: CircleAvatar(
                   radius: 50,
-                  backgroundImage: organizer.avatarUrl != null
+                  backgroundImage: organizer.avatarUrl != null || organizer.avatarUrl == ""
                       ? CachedNetworkImageProvider(organizer.avatarUrl!)
                       : null,
                   backgroundColor: AppColors.primaryColor.withOpacity(0.2),
-                  child: organizer.avatarUrl == null
+                  child: organizer.avatarUrl == null || organizer.avatarUrl == ""
                       ? Icon(Icons.person,
                           size: 50, color: AppColors.primaryColor)
                       : null,

@@ -3,9 +3,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ezbooking/core/config/app_colors.dart';
 import 'package:ezbooking/core/services/notification_service.dart';
 import 'package:ezbooking/core/utils/dialogs.dart';
+import 'package:ezbooking/data/models/notification_model.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/event_detail_bloc.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/event_detail_event.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/event_detail_state.dart';
+import 'package:ezbooking/presentation/pages/notification/notification_cubit.dart';
 import 'package:ezbooking/presentation/policy/policy_privacy_page.dart';
 import 'package:ezbooking/presentation/screens/ticket/bloc/get_ticket_cubit.dart';
 import 'package:flutter/material.dart';
@@ -103,7 +105,7 @@ class _ViewTicketPageState extends State<ViewTicketPage> {
                     await showBottomSheetCancelTicket(
                       context: context,
                       ticket: widget.ticket,
-                      onCancelSuccess: () {},
+                      onCancelSuccess: () => Navigator.pop(context),
                     );
                   },
                   icon: const Icon(Icons.privacy_tip_outlined),
@@ -466,9 +468,24 @@ class _ViewTicketPageState extends State<ViewTicketPage> {
                           DialogUtils.showLoadingDialog(context);
                           await cancelTicket(ticket);
                           onCancelSuccess();
+                          final notiCubit =
+                              BlocProvider.of<NotificationCubit>(context);
+                          NotificationModel noti = NotificationModel(
+                            id: "",
+                            title: "Ticket Cancellation",
+                            message:
+                                "Your ticket #${ticket.id} has been cancelled!.",
+                            isRead: false,
+                            actionUrl: "",
+                            createdAt: Timestamp.now(),
+                          );
+
+                          await notiCubit.addNotification(ticket.userID, noti);
+
                           NotificationService.showInstantNotification(
-                              "Ticket Cancellation",
-                              "Your ticket #${ticket.id} has been cancelled!.");
+                            "Ticket Cancellation",
+                            "Your ticket #${ticket.id} has been cancelled!.",
+                          );
                           WidgetsBinding.instance.addPostFrameCallback((_) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(

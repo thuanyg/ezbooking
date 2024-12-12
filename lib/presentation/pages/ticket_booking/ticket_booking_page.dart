@@ -6,9 +6,11 @@ import 'package:ezbooking/core/services/notification_service.dart';
 import 'package:ezbooking/core/utils/dialogs.dart';
 import 'package:ezbooking/core/utils/utils.dart';
 import 'package:ezbooking/data/models/event.dart';
+import 'package:ezbooking/data/models/notification_model.dart';
 import 'package:ezbooking/data/models/order_mail_request.dart';
 import 'package:ezbooking/data/models/ticket.dart';
 import 'package:ezbooking/data/models/vn_pay_response.dart';
+import 'package:ezbooking/presentation/pages/notification/notification_cubit.dart';
 import 'package:ezbooking/presentation/pages/ticket_booking/bloc/tickets/create_ticket_bloc.dart';
 import 'package:ezbooking/presentation/pages/ticket_booking/payment_page.dart';
 import 'package:ezbooking/presentation/pages/ticket_booking/payment_success_page.dart';
@@ -83,6 +85,7 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
@@ -169,12 +172,69 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                                   required maxLength}) {
                                 return const SizedBox.shrink();
                               },
+                              onSubmitted: (value) {
+                                if (quantityController.text.isEmpty) {
+                                  DialogUtils.showWarningDialog(
+                                    context: context,
+                                    title: "Please choose number of tickets.",
+                                    onClickOutSide: () {},
+                                  );
+                                  return;
+                                }
+                                final num = int.parse(quantityController.text);
+                                if (num > 10) {
+                                  DialogUtils.showWarningDialog(
+                                    context: context,
+                                    title:
+                                        "You can only purchase up to 10 tickets at a time.",
+                                    onClickOutSide: () {},
+                                  );
+                                  return;
+                                }
+
+                                if (num <= 0) {
+                                  DialogUtils.showWarningDialog(
+                                    context: context,
+                                    title: "Your selection is not valid",
+                                    onClickOutSide: () {},
+                                  );
+                                  return;
+                                }
+
+                                setState(() {
+                                  numberOfTickets = num;
+                                });
+                              },
+                              onChanged: (value) {
+                                final num = int.parse(quantityController.text);
+                                if (num > 10) {
+                                  DialogUtils.showWarningDialog(
+                                    context: context,
+                                    title:
+                                        "You can only purchase up to 10 tickets at a time.",
+                                    onClickOutSide: () {},
+                                  );
+                                  return;
+                                }
+
+                                if (num <= 0) {
+                                  DialogUtils.showWarningDialog(
+                                    context: context,
+                                    title: "Your selection is not valid",
+                                    onClickOutSide: () {},
+                                  );
+                                  return;
+                                }
+                                setState(() {
+                                  numberOfTickets = num;
+                                });
+                              },
                               style: const TextStyle(
                                 fontSize: 16,
                                 color: Colors.black54,
                               ),
                               maxLines: 1,
-                              maxLength: 5,
+                              maxLength: 2,
                               textAlign: TextAlign.center,
                             ),
                           ),
@@ -243,6 +303,36 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                       textButton: "Continue",
                       iconName: "ic_button_next.png",
                       onTap: () async {
+                        if (quantityController.text.isEmpty) {
+                          DialogUtils.showWarningDialog(
+                            context: context,
+                            title: "Please choose number of tickets.",
+                            onClickOutSide: () {},
+                          );
+                          return;
+                        }
+
+                        final num = int.parse(quantityController.text);
+                        if (num > 10) {
+                          DialogUtils.showWarningDialog(
+                            context: context,
+                            title:
+                                "You can only purchase up to 10 tickets at a time.",
+                            onClickOutSide: () {},
+                          );
+                          return;
+                        }
+
+                        if (num <= 0) {
+                          DialogUtils.showWarningDialog(
+                            context: context,
+                            title: "Your selection is not valid",
+                            onClickOutSide: () {},
+                          );
+                          return;
+                        }
+
+                        createTicketBloc.emitState(TicketCreationStatus.idle);
                         DialogUtils.showLoadingDialog(context);
 
                         bool isTicketAvailable = event!.availableTickets >=
@@ -274,7 +364,6 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                           orderType: 'Online',
                         );
 
-
                         await cf.FirebaseFirestore.instance
                             .collection('orders')
                             .doc(order?.id)
@@ -283,18 +372,17 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                         DialogUtils.hide(context);
 
                         // Handle add free Ticket
-                        if(event?.ticketPrice == 0.0) {
+                        if (event?.ticketPrice == 0.0) {
                           final tickets = await createTicketFromOrder(order);
                           DialogUtils.hide(context);
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) =>
-                                  PaymentSuccessPage(
-                                    order: order!,
-                                    event: event!,
-                                    tickets: tickets,
-                                  ),
+                              builder: (context) => PaymentSuccessPage(
+                                order: order!,
+                                event: event!,
+                                tickets: tickets,
+                              ),
                             ),
                           );
                           return;
@@ -312,6 +400,26 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
 
                             if (vnpayResponse.code == "00") {
                               tickets = await createTicketFromOrder(order);
+
+                              final notiCubit =
+                                  BlocProvider.of<NotificationCubit>(context);
+                              NotificationModel noti = NotificationModel(
+                                id: "",
+                                title: "Order Placed Successfully",
+                                message:
+                                    "Your order (ID: ${order?.id ?? ""}) has been successfully created.",
+                                isRead: false,
+                                actionUrl: "",
+                                createdAt: cf.Timestamp.now(),
+                              );
+
+                              await notiCubit.addNotification(
+                                  order?.userID ?? "", noti);
+
+                              NotificationService.showInstantNotification(
+                                "Order Placed Successfully",
+                                "Your order (ID: ${order?.id ?? ""}) has been successfully created.",
+                              );
                             } else {
                               createTicketBloc.errorMessage =
                                   vnpayResponse.description;
@@ -340,7 +448,8 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                                   child: Container(
                                     alignment: Alignment.center,
                                     margin: const EdgeInsets.symmetric(
-                                        horizontal: 40),
+                                      horizontal: 40,
+                                    ),
                                     child: Material(
                                       borderRadius: BorderRadius.circular(18),
                                       child: Container(
@@ -369,31 +478,42 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                                             }
                                             if (state ==
                                                 TicketCreationStatus.success) {
-                                              tickets.forEach(
-                                                (element) {
-                                                  NotificationService
-                                                      .showInstantNotification(
-                                                    "New tickets",
-                                                    "Ticket #${element.id} has been created.",
-                                                  );
-                                                },
-                                              );
-
-                                              final orderMailRequest = OrderMailRequest(
-                                                email: userInfoBloc.user?.email ?? "",
-                                                orderDetails: OrderDetails(
-                                                  orderID: order?.id ?? "",
-                                                  customerEmail: userInfoBloc.user?.email,
-                                                  customerName: userInfoBloc.user?.fullName,
-                                                  totalAmount: _calculateTotalAmount(order?.ticketQuantity, order?.ticketPrice),
-                                                  tickets: tickets.map((ticket) => Tickets(
-                                                      name: ticket.ticketType,
-                                                      quantity: order?.ticketQuantity ?? 1,
-                                                      price: ticket.ticketPrice.toInt(),
-                                                  )).toList(),
-                                                )
-                                              );
-                                              await MailService.sendOrderEmail(orderMailRequest);
+                                              final orderMailRequest =
+                                                  OrderMailRequest(
+                                                      email: userInfoBloc
+                                                              .user?.email ??
+                                                          "",
+                                                      orderDetails:
+                                                          OrderDetails(
+                                                        orderID:
+                                                            order?.id ?? "",
+                                                        customerEmail:
+                                                            userInfoBloc
+                                                                .user?.email,
+                                                        customerName:
+                                                            userInfoBloc
+                                                                .user?.fullName,
+                                                        totalAmount:
+                                                            _calculateTotalAmount(
+                                                          order?.ticketQuantity,
+                                                          order?.ticketPrice,
+                                                        ),
+                                                        tickets: tickets
+                                                            .map((ticket) =>
+                                                                Tickets(
+                                                                  name: ticket
+                                                                      .ticketType,
+                                                                  quantity:
+                                                                      order?.ticketQuantity ??
+                                                                          1,
+                                                                  price: ticket
+                                                                      .ticketPrice
+                                                                      .toInt(),
+                                                                ))
+                                                            .toList(),
+                                                      ));
+                                              await MailService.sendOrderEmail(
+                                                  orderMailRequest);
 
                                               await Future.delayed(
                                                 const Duration(
@@ -415,15 +535,9 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
                                             }
                                             if (state ==
                                                 TicketCreationStatus.error) {
-                                              NotificationService
-                                                  .showInstantNotification(
-                                                "Failure",
-                                                "Failed when processing order!",
-                                              );
-
                                               await Future.delayed(
                                                 const Duration(
-                                                    milliseconds: 2000),
+                                                    milliseconds: 1500),
                                                 () => Navigator.pop(context),
                                               );
                                             }
@@ -572,7 +686,8 @@ class _TicketBookingPageState extends State<TicketBookingPage> {
     // Ensure the ticketQuantity and ticketPrice are not null and valid
     if (ticketQuantity != null && ticketPrice != null) {
       // Calculate the total amount safely
-      return (ticketQuantity * ticketPrice).toInt(); // Convert the result to an integer
+      return (ticketQuantity * ticketPrice)
+          .toInt(); // Convert the result to an integer
     }
     return 0; // Return 0 if either value is null or invalid
   }

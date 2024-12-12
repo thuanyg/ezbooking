@@ -5,23 +5,54 @@ import 'package:ezbooking/presentation/pages/event/bloc/fetch_favorite_bloc.dart
 import 'package:ezbooking/presentation/pages/event/bloc/fetch_favorite_event.dart';
 import 'package:ezbooking/presentation/pages/event/bloc/fetch_favorite_state.dart';
 import 'package:ezbooking/presentation/pages/event/event_detail.dart';
+import 'package:ezbooking/presentation/pages/event/event_upcoming.dart';
+import 'package:ezbooking/presentation/pages/ticket_booking/ticket_booking_page.dart';
+import 'package:ezbooking/presentation/screens/explore/widgets/latest_event.dart';
+import 'package:ezbooking/presentation/screens/explore/widgets/up_coming_event.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 
-class FavoritesEventsPage extends StatelessWidget {
+class FavoritesEventsPage extends StatefulWidget {
   const FavoritesEventsPage({super.key});
 
   static String routeName = "FavoritesEventsPage";
 
   @override
-  Widget build(BuildContext context) {
-    final FetchFavoriteBloc favoriteBloc =
-        BlocProvider.of<FetchFavoriteBloc>(context);
+  State<FavoritesEventsPage> createState() => _FavoritesEventsPageState();
+}
+
+class _FavoritesEventsPageState extends State<FavoritesEventsPage> {
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
+  late FetchFavoriteBloc _bloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _bloc = BlocProvider.of<FetchFavoriteBloc>(context);
     User? user = FirebaseAuth.instance.currentUser;
-    favoriteBloc.add(FetchFavorite(user!.uid));
+    _bloc.add(FetchFavorite(user!.uid));
+  }
+
+  void _startSearch() {
+    setState(() {
+      _isSearching = true;
+    });
+  }
+
+  void _stopSearch() {
+    setState(() {
+      _isSearching = false;
+      _searchController.clear();
+      _bloc.emitEventsFetched();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: _buildAppBar(),
@@ -37,7 +68,7 @@ class FavoritesEventsPage extends StatelessWidget {
           }
           if (state is FetchFavoriteSuccess) {
             if (state.events.isEmpty) {
-              return _buildEmptyState();
+              return _buildEmptyState(context);
             }
             return _buildEventsList(state.events);
           }
@@ -49,37 +80,36 @@ class FavoritesEventsPage extends StatelessWidget {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      title: const Text(
-        'Favorites',
-        style: TextStyle(
-          color: Colors.black87,
-          fontWeight: FontWeight.w600,
-          fontSize: 24,
-        ),
-      ),
-      backgroundColor: Colors.white,
-      elevation: 0,
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(1.0),
-        child: Container(
-          color: Colors.grey[200],
-          height: 1.0,
-        ),
-      ),
+      scrolledUnderElevation: 0,
+      title: _isSearching
+          ? TextField(
+              controller: _searchController,
+              autofocus: true,
+              onChanged: (query) {
+                _bloc.add(SearchFavorite(query));
+              },
+              decoration: const InputDecoration(
+                hintText: 'Search favorites...',
+                border: InputBorder.none,
+              ),
+            )
+          : Text('Favorites'),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.search, color: Colors.black87, size: 28),
-          onPressed: () {},
-        ),
-        IconButton(
-          icon: const Icon(Icons.filter_list, color: Colors.black87, size: 28),
-          onPressed: () {},
-        ),
+        if (_isSearching)
+          IconButton(
+            icon: Icon(Icons.close),
+            onPressed: _stopSearch,
+          )
+        else
+          IconButton(
+            icon: Icon(Icons.search),
+            onPressed: _startSearch,
+          ),
       ],
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -117,12 +147,25 @@ class FavoritesEventsPage extends StatelessWidget {
           ),
           const SizedBox(height: 32),
           ElevatedButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.explore),
-            label: const Text('Explore Events'),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EventUpComingPage(),
+                ),
+              );
+            },
+            icon: const Icon(
+              Icons.explore,
+              color: Colors.white,
+            ),
+            label: const Text(
+              'Explore Events',
+              style: TextStyle(color: Colors.white),
+            ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue[700],
-              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              backgroundColor: AppColors.primaryColor,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30),
               ),
@@ -205,25 +248,13 @@ class FavoritesEventsPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          event.name,
-                          style: const TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.favorite, size: 28),
-                        color: Colors.red[400],
-                        onPressed: () {},
-                      ),
-                    ],
+                  Text(
+                    event.name,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
                   ),
                   Text(
                     event.description,
@@ -262,12 +293,20 @@ class FavoritesEventsPage extends StatelessWidget {
                         ],
                       ),
                       ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pushNamed(
+                            context,
+                            TicketBookingPage.routeName,
+                            arguments: event,
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryColor,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 32, vertical: 16),
+                            horizontal: 28,
+                            vertical: 12,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),

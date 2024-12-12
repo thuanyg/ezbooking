@@ -15,7 +15,7 @@ class PaymentMethodPage extends StatelessWidget {
         centerTitle: true,
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -32,32 +32,41 @@ class PaymentMethodPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 28),
-            ListTile(
-              leading: ImageHelper.loadAssetImage(
-                "${assetImageLink}vnpay.png",
-                height: 28,
-                fit: BoxFit.cover,
-              ),
-              title: const Text("ATM/Internet Banking"),
-              trailing: Radio(
-                value: "i",
-                groupValue: "i",
-                onChanged: (value) {},
-              ),
-            ),
-            ListTile(
-              leading: ImageHelper.loadAssetImage(
-                "${assetImageLink}momo.png",
-                height: 28,
-                fit: BoxFit.fill,
-              ),
-              title: const Text("Momo"),
-              trailing: Radio(
-                value: "a",
-                groupValue: "i",
-                onChanged: (value) {},
-              ),
-            ),
+            Row(
+              children: [
+                ImageHelper.loadAssetImage(
+                  "${assetImageLink}vnpay.png",
+                  height: 28,
+                  fit: BoxFit.cover,
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text("ATM/Internet Banking"),
+                  ),
+                ),
+                Radio(
+                  value: "i",
+                  groupValue: "i",
+                  onChanged: (value) {},
+                )
+              ],
+            )
+
+            // ListTile(
+            //   leading: ImageHelper.loadAssetImage(
+            //     "${assetImageLink}momo.png",
+            //     height: 28,
+            //     fit: BoxFit.fill,
+            //   ),
+            //   title: const Text("Momo"),
+            //   trailing: Radio(
+            //     value: "a",
+            //     groupValue: "i",
+            //     onChanged: (value) {},
+            //   ),
+            // ),
           ],
         ),
       ),

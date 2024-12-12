@@ -134,62 +134,59 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
   }
 
   Widget _buildOrderCard(Order order) {
-    return GestureDetector(
-      onTap: () => _showOrderDetailsBottomSheet(context, order),
-      child: Card(
-        elevation: 1,
-        color: const Color(0xFFF8F8F8),
-        margin: const EdgeInsets.only(bottom: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: AppColors.borderOutlineColor,
-            width: 1,
-          ),
+    return Card(
+      elevation: 1,
+      color: const Color(0xFFF8F8F8),
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: AppColors.borderOutlineColor,
+          width: 1,
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Order #${order.id}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryColor,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    'Order #${order.id}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryColor,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  _buildStatusChip(order.status),
-                ],
-              ),
-              const SizedBox(height: 12),
-              _buildOrderDetailRow(
-                'Tickets',
-                Text(
-                  '${order.ticketQuantity} x ${NumberFormat.currency(symbol: '\$').format(order.ticketPrice)}',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
+                _buildStatusChip(order.status),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _buildOrderDetailRow(
+              'Tickets',
+              Text(
+                '${order.ticketQuantity} x ${NumberFormat.currency(symbol: '\$').format(order.ticketPrice)}',
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
-              const SizedBox(height: 8),
-              _buildOrderDetailRow(
-                'Date',
-                Text(
-                  DateFormat('dd MMM yyyy, HH:mm')
-                      .format(order.createdAt.toDate()),
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
+            ),
+            const SizedBox(height: 8),
+            _buildOrderDetailRow(
+              'Date',
+              Text(
+                DateFormat('dd MMM yyyy, HH:mm')
+                    .format(order.createdAt.toDate()),
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
-              const SizedBox(height: 8),
-              _buildActionButtons(order),
-            ],
-          ),
+            ),
+            const SizedBox(height: 8),
+            _buildActionButtons(order),
+          ],
         ),
       ),
     );
@@ -250,9 +247,7 @@ class _OrderHistoryPageState extends State<OrderHistoryPage>
 
   Widget _buildActionButtons(Order order) {
     return OutlinedButton(
-      onPressed: () {
-        // Implement view ticket details
-      },
+      onPressed: () => _showOrderDetailsBottomSheet(context, order),
       style: OutlinedButton.styleFrom(
         side: BorderSide(color: AppColors.primaryColor),
         shape: RoundedRectangleBorder(

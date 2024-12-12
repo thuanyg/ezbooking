@@ -1,3 +1,4 @@
+import 'package:ezbooking/core/config/app_styles.dart';
 import 'package:ezbooking/presentation/pages/event/event_detail.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/popular/popular_event_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/popular/popular_event_state.dart';
@@ -21,7 +22,14 @@ class _PopularEventState extends State<PopularEvent> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        buildShowByCategory(label: 'Popular Now', onSeeAll: () {}),
+        // buildShowByCategory(label: 'Popular Now', onSeeAll: () {}),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Text(
+            "Popular Now",
+            style: AppStyles.title1.copyWith(fontWeight: FontWeight.w400),
+          ),
+        ),
         SizedBox(
           height: 200,
           child: BlocBuilder<PopularEventBloc, PopularEventState>(
