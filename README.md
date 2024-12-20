@@ -30,7 +30,7 @@ The system integrates with **VNPAY**, a leading online payment gateway in Vietna
 
 ### Home Page
 
-![Home Page](./screenshots/home_page.png)
+![Home Page](./screenshots/home_page_01.png)
 
 ### Event Listing
 
