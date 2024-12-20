@@ -331,7 +331,9 @@ class EventDatasourceImpl extends EventDatasource {
       final eventDoc = await firestore.collection('events').doc(eventID).get();
       if (eventDoc.exists) {
         final eventData = eventDoc.data()!;
-        popularEvents.add(Event.fromJson(eventData));
+        if(eventData["isDelete"] == false) {
+          popularEvents.add(Event.fromJson(eventData));
+        }
       }
     }
 

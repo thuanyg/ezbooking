@@ -58,6 +58,7 @@ dependencies:
   cloud_functions: ^5.2.0
   google_sign_in: ^6.2.2
   app_links: ^6.3.3
+  flutter_launcher_icons: ^0.14.2
 
 #  vnpay_flutter: ^1.0.3
 dependency_overrides:
@@ -66,7 +67,13 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
-
+# IC LAUNCHER
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path_android: "assets/images/ic_launcher_logo.png"
+  image_path: "assets/images/ic_launcher_logo.png"
+  remove_alpha_ios: true
 # The following section is specific to Flutter packages.
 flutter:
   uses-material-design: true

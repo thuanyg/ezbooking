@@ -6,6 +6,7 @@ import 'package:ezbooking/core/config/app_styles.dart';
 import 'package:ezbooking/core/config/constants.dart';
 import 'package:ezbooking/core/utils/image_helper.dart';
 import 'package:ezbooking/data/models/category.dart';
+import 'package:ezbooking/data/models/location_result.dart';
 import 'package:ezbooking/presentation/pages/event/event_upcoming.dart';
 import 'package:ezbooking/presentation/pages/event/events_by_category.dart';
 import 'package:ezbooking/presentation/pages/maps/bloc/get_location_bloc.dart';
@@ -22,6 +23,7 @@ import 'package:ezbooking/presentation/screens/explore/bloc/popular/popular_even
 import 'package:ezbooking/presentation/screens/explore/bloc/popular/popular_event_event.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/upcoming/upcoming_event_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/upcoming/upcoming_event_event.dart';
+import 'package:ezbooking/presentation/screens/explore/widgets/address_map_choose.dart';
 import 'package:ezbooking/presentation/screens/explore/widgets/latest_event.dart';
 import 'package:ezbooking/presentation/screens/explore/widgets/near_by_event.dart';
 import 'package:ezbooking/presentation/screens/explore/widgets/organizer_list.dart';
@@ -219,7 +221,7 @@ class _ExploreScreenState extends State<ExploreScreen>
                   );
                 },
                 decoration: const InputDecoration(
-                  hintText: "Search...",
+                  hintText: "Search events...",
                   border: InputBorder.none,
                   hintStyle: TextStyle(color: Colors.white),
                 ),
@@ -416,6 +418,7 @@ class _ExploreScreenState extends State<ExploreScreen>
                           ),
                         ),
                         const SizedBox(height: 16),
+                        buildLocationFilter(),
                         Text("Select price range", style: AppStyles.h5),
                         const SizedBox(height: 16),
                         Padding(
@@ -532,6 +535,87 @@ class _ExploreScreenState extends State<ExploreScreen>
 
   @override
   bool get wantKeepAlive => true;
+
+  Widget buildLocationFilter() {
+    return Column(
+      children: [
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Text("Nearby", style: AppStyles.h5),
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: () async {
+            final LocationResult? locationResult = await showModalBottomSheet(
+              context: context,
+              barrierLabel: '',
+              isScrollControlled: true,
+              isDismissible: false,
+              enableDrag: false,
+              builder: (context) {
+                return SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.87,
+                  width: double.infinity,
+                  child: const AddressFilterChoose(),
+                );
+              },
+            );
+            if (locationResult != null) {
+              filterBloc.add(SelectLocation(locationResult));
+            }
+          },
+          child: Container(
+            height: 60,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.borderOutlineColor),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    height: 36,
+                    width: 36,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      color: const Color(0xffE6E9FF),
+                    ),
+                    child: Icon(
+                      Icons.location_on_outlined,
+                      color: AppColors.primaryColor,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: BlocBuilder(
+                      bloc: filterBloc,
+                      builder: (context, state) {
+                        return Text(
+                          filterBloc.locationResult?.address ?? "Choose address",
+                          style: const TextStyle(
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios_outlined,
+                    color: AppColors.primaryColor,
+                    size: 16,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
 }
 
 Widget buildShowByCategory(

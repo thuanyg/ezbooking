@@ -110,9 +110,9 @@ class _NotificationPageState extends State<NotificationPage> {
             size: 100,
             color: Colors.grey[400],
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           Text(
-            'Không có thông báo mới',
+            'No notifications at this moment.',
             style: TextStyle(
               color: Colors.grey[600],
               fontSize: 18,

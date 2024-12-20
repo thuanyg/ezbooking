@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:bloc/bloc.dart';
 import 'package:ezbooking/core/config/constants.dart';
 import 'package:ezbooking/data/models/category.dart';
+import 'package:ezbooking/data/models/location_result.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/filter/filter_event.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/filter/filter_state.dart';
 import 'package:flutter/material.dart';
@@ -8,12 +11,14 @@ import 'package:flutter/material.dart';
 class FilterBloc extends Bloc<FilterEvent, FilterState> {
   List<Category> selectedFilterItems = [];
   DateTimeRange? selectedDateRange;
+  LocationResult? locationResult;
   RangeValues currentRangeValues = const RangeValues(0, 0);
 
   FilterBloc() : super(FilterInitial()) {
     on<SelectFilterItem>(_onSelectFilterItem);
     on<SetSelectedDate>(_onSetSelectedDate);
     on<SetRangeValues>(_onSetRangeValues);
+    on<SelectLocation>(_onSelectLocation);
   }
 
   void _onSelectFilterItem(SelectFilterItem event, Emitter<FilterState> emit) {
@@ -25,9 +30,13 @@ class FilterBloc extends Bloc<FilterEvent, FilterState> {
     emit(_buildUpdatedState());
   }
 
-
   void _onSetSelectedDate(SetSelectedDate event, Emitter<FilterState> emit) {
     selectedDateRange = event.selectedDateRange;
+    emit(_buildUpdatedState());
+  }
+
+  void _onSelectLocation(SelectLocation event, Emitter<FilterState> emit) {
+    locationResult = event.locationResult;
     emit(_buildUpdatedState());
   }
 
@@ -41,6 +50,7 @@ class FilterBloc extends Bloc<FilterEvent, FilterState> {
       selectedFilterItems: selectedFilterItems,
       selectedDateRange: selectedDateRange,
       currentRangeValues: currentRangeValues,
+      locationResult: locationResult,
     );
   }
 
@@ -48,10 +58,12 @@ class FilterBloc extends Bloc<FilterEvent, FilterState> {
     selectedFilterItems = [];
     currentRangeValues = const RangeValues(0, 0);
     selectedDateRange = null;
+    locationResult = null;
     emit(FilterUpdated(
       selectedFilterItems: selectedFilterItems,
       selectedDateRange: selectedDateRange,
       currentRangeValues: currentRangeValues,
+      locationResult: locationResult,
     ));
   }
 

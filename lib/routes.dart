@@ -26,7 +26,7 @@ class Routes {
     LoginPage.routeName: (context) => LoginPage(),
     SignupPage.routeName: (context) => SignupPage(),
     VerificationPage.routeName: (context) => VerificationPage(),
-    ResetPassword.routeName: (context) => const ResetPassword(),
+    ResetPassword.routeName: (context) => ResetPassword(),
     EventDetail.routeName: (context) => const EventDetail(),
     EventUpComingPage.routeName: (context) => const EventUpComingPage(),
     MyProfilePage.routeName: (context) => MyProfilePage(),

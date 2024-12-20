@@ -5,14 +5,17 @@ import 'package:ezbooking/core/utils/image_helper.dart';
 import 'package:ezbooking/core/utils/utils.dart';
 import 'package:ezbooking/data/models/category.dart';
 import 'package:ezbooking/data/models/event.dart';
+import 'package:ezbooking/data/models/location_result.dart';
 import 'package:ezbooking/presentation/pages/event/event_detail.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/category/fetch_categories_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/filter/filter_bloc.dart';
 import 'package:ezbooking/presentation/screens/explore/bloc/filter/filter_event.dart';
+import 'package:ezbooking/presentation/screens/explore/widgets/address_map_choose.dart';
 import 'package:ezbooking/presentation/widgets/button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 
@@ -68,6 +71,17 @@ class _SearchResultPageState extends State<SearchResultPage> {
     }
   }
 
+  bool _isWithinDistance(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+    double allowedDistanceInKm,
+  ) {
+    double distance = Geolocator.distanceBetween(lat1, lon1, lat2, lon2);
+    return distance <= (allowedDistanceInKm * 1000);
+  }
+
   void _applyFilters() {
     setState(() {
       filteredEvents = allEvents.where((event) {
@@ -88,6 +102,15 @@ class _SearchResultPageState extends State<SearchResultPage> {
             event.date.isAtSameMomentAs(filterBloc.selectedDateRange!.start) ||
             event.date.isAtSameMomentAs(filterBloc.selectedDateRange!.end);
 
+        bool matchesLocation = filterBloc.locationResult == null ||
+            _isWithinDistance(
+              event.geoPoint!.latitude,
+              event.geoPoint!.longitude,
+              filterBloc.locationResult!.position!.latitude,
+              filterBloc.locationResult!.position!.longitude,
+              allowedDistanceInKm,
+            );
+
         // Filter by price range
         bool matchesPriceRange = filterBloc.currentRangeValues.start == 0 &&
                 filterBloc.currentRangeValues.end == 0 ||
@@ -97,11 +120,11 @@ class _SearchResultPageState extends State<SearchResultPage> {
         return matchesQuery &&
             matchesFilterItems &&
             matchesDateRange &&
+            matchesLocation &&
             matchesPriceRange;
       }).toList();
     });
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -165,6 +188,87 @@ class _SearchResultPageState extends State<SearchResultPage> {
     );
   }
 
+  Widget buildLocationFilter() {
+    return Column(
+      children: [
+        Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Text("Nearby", style: AppStyles.h5),
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: () async {
+            final LocationResult? locationResult = await showModalBottomSheet(
+              context: context,
+              barrierLabel: '',
+              isScrollControlled: true,
+              isDismissible: false,
+              enableDrag: false,
+              builder: (context) {
+                return SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.87,
+                  width: double.infinity,
+                  child: const AddressFilterChoose(),
+                );
+              },
+            );
+            if (locationResult != null) {
+              filterBloc.add(SelectLocation(locationResult));
+            }
+          },
+          child: Container(
+            height: 60,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.borderOutlineColor),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    height: 36,
+                    width: 36,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      color: const Color(0xffE6E9FF),
+                    ),
+                    child: Icon(
+                      Icons.location_on_outlined,
+                      color: AppColors.primaryColor,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: BlocBuilder(
+                      bloc: filterBloc,
+                      builder: (context, state) {
+                        return Text(
+                          filterBloc.locationResult?.address ?? "Choose address",
+                          style: const TextStyle(
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios_outlined,
+                    color: AppColors.primaryColor,
+                    size: 16,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
   Future<dynamic> buildFilterBottomSheet(BuildContext context) {
     final size = MediaQuery.of(context).size;
     return showModalBottomSheet(
@@ -208,15 +312,17 @@ class _SearchResultPageState extends State<SearchResultPage> {
                         ),
                         Text("Filters", style: AppStyles.h4),
                         BlocBuilder<FetchCategoriesBloc, List<Category>>(
-                          builder: (BuildContext context, List<Category> state) {
-                            if(state.isNotEmpty){
+                          builder:
+                              (BuildContext context, List<Category> state) {
+                            if (state.isNotEmpty) {
                               return SizedBox(
                                 height: 120,
                                 child: ListView.builder(
                                   itemCount: state.length,
                                   scrollDirection: Axis.horizontal,
                                   itemBuilder: (context, index) {
-                                    bool isSelected = filterBloc.selectedFilterItems
+                                    bool isSelected = filterBloc
+                                        .selectedFilterItems
                                         .contains(state[index]);
                                     return Padding(
                                       padding: const EdgeInsets.symmetric(
@@ -238,7 +344,8 @@ class _SearchResultPageState extends State<SearchResultPage> {
                                                 border: Border.all(
                                                   color: isSelected
                                                       ? Colors.white
-                                                      : AppColors.borderOutlineColor,
+                                                      : AppColors
+                                                          .borderOutlineColor,
                                                   width: 1.5,
                                                 ),
                                                 color: isSelected
@@ -256,9 +363,10 @@ class _SearchResultPageState extends State<SearchResultPage> {
                                             const SizedBox(height: 4),
                                             Expanded(
                                                 child: Text(
-                                                  state[index].categoryName,
-                                                  style: const TextStyle(fontSize: 16),
-                                                ))
+                                              state[index].categoryName,
+                                              style:
+                                                  const TextStyle(fontSize: 16),
+                                            ))
                                           ],
                                         ),
                                       ),
@@ -275,7 +383,7 @@ class _SearchResultPageState extends State<SearchResultPage> {
                         InkWell(
                           onTap: () async {
                             final selectedDateRange =
-                            await showSelectDateRange(context);
+                                await showSelectDateRange(context);
                             if (selectedDateRange != null) {
                               filterBloc
                                   .add(SetSelectedDate(selectedDateRange));
@@ -314,6 +422,7 @@ class _SearchResultPageState extends State<SearchResultPage> {
                           ),
                         ),
                         const SizedBox(height: 16),
+                        buildLocationFilter(),
                         Text("Select price range", style: AppStyles.h5),
                         const SizedBox(height: 16),
                         Padding(
@@ -462,7 +571,8 @@ class _SearchResultPageState extends State<SearchResultPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(15)),
               child: Image.network(
                 event.thumbnail ?? event.poster ?? '',
                 height: 200,

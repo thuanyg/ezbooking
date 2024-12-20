@@ -97,3 +97,4 @@ const String assetAnimationLink = "assets/animations/";
 // Dimensions
 const double mainButtonHeight = 58;
 const double mainButtonWidth = 320;
+const double allowedDistanceInKm = 3;

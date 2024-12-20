@@ -23,7 +23,7 @@
     <application
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:label="ezbooking"
+        android:label="EzBooking"
         android:requestLegacyExternalStorage="true"
         android:usesCleartextTraffic="true">
         <activity android:name="io.flutter.plugins.webviewflutter.WebViewFlutterActivity" />
