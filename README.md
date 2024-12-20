@@ -1,4 +1,4 @@
-# ezbooking - Event Ticketing System
+# ezbooking - Event Ticketing App Flutter
 
 **ezbooking** is a comprehensive event ticketing system designed to manage events, process ticket sales, and provide different access levels for users: Admin, Organizers, and Users. This application streamlines the event booking process, and with the addition of **VNPAY Payment Gateway**, it enables secure and convenient online payments for users.
 
