@@ -29,28 +29,49 @@ The system integrates with **VNPAY**, a leading online payment gateway in Vietna
 ## Screenshots
 
 ### Home Page
-
-<img src="./screenshots/home_page_01.png" alt="Home Page 1" width="400">
-<img src="./screenshots/home_page_02.png" alt="Home Page 2" width="400">
+<div style="display: flex; gap: 10px;">
+  <img src="./screenshots/home_page_01.png" alt="Home Page 1" width="400">
+  <img src="./screenshots/home_page_02.png" alt="Home Page 2" width="400">
+</div>
 
 ### Event Listing
-<img src="./screenshots/event_list_01.png" alt="Event list 1" width="400">
-<img src="./screenshots/event_list_02.png" alt="Event list 2" width="400">
+<div style="display: flex; gap: 10px;">
+  <img src="./screenshots/event_list_01.png" alt="Event list 1" width="400">
+  <img src="./screenshots/event_list_02.png" alt="Event list 2" width="400">
+</div>
 
 ### Event Details
-<img src="./screenshots/event_detail_01.png" alt="Event detail 1" width="400">
-<img src="./screenshots/event_detail_02.png" alt="Event detail 2" width="400">
+<div style="display: flex; gap: 10px;">
+  <img src="./screenshots/event_detail_01.png" alt="Event detail 1" width="400">
+  <img src="./screenshots/event_detail_02.png" alt="Event detail 2" width="400">
+</div>
 
 ### My tickets
-<img src="./screenshots/my_ticket_01.png" alt="My ticket 1" width="400">
-<img src="./screenshots/my_ticket_02.png" alt="My ticcket 2" width="400">
-<img src="./screenshots/ticket_detail.png" alt="Ticket details" width="400">
+<div style="display: flex; gap: 10px;">
+  <img src="./screenshots/my_ticket_01.png" alt="My ticket 1" width="400">
+  <img src="./screenshots/my_ticket_02.png" alt="My ticket 2" width="400">
+  <img src="./screenshots/ticket_detail.png" alt="Ticket details" width="400">
+</div>
 
 ### Personal
-<img src="./screenshots/personal_page.png" alt="Personal Page" width="400">
+<div style="display: flex; gap: 10px;">
+  <img src="./screenshots/personal_page.png" alt="Personal Page" width="400">
+</div>
 
-### User Ticket Booking
-![Ticket Booking](./screenshots/ticket_booking.png)
+### Others
+<div style="display: flex; gap: 10px;">
+  <img src="./screenshots/img.png" alt="Other" width="400">
+  <img src="./screenshots/img_1.png" alt="Other" width="400">
+  <img src="./screenshots/img_2.png" alt="Other" width="400">
+  <img src="./screenshots/img_3.png" alt="Other" width="400">
+  <img src="./screenshots/img_4.png" alt="Other" width="400">
+  <img src="./screenshots/img_5.png" alt="Other" width="400">
+  <img src="./screenshots/img_6.png" alt="Other" width="400">
+  <img src="./screenshots/img_7.png" alt="Other" width="400">
+  <img src="./screenshots/img_8.png" alt="Other" width="400">
+  <img src="./screenshots/img_9.png" alt="Other" width="400">
+</div>
+
 
 *Add your screenshots in the `screenshots` directory to display them here.*
 
